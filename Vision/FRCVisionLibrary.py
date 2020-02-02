@@ -128,135 +128,56 @@ class FRCVisionLibrary:
         return targetX, targetY, targetRadius, distanceToBall, angleToBall, ballOffset, screenPercent, foundBall
 
 
-    #Find vision target for goal
-    def detect_goal_target(self, imgRaw):
-        
-        #Set constraints for detecting vision targets
-        visionTargetWidth = float(FRCVisionLibrary.goal_values['TARGETWIDTH']) #inches
-        visionTargetHeight = float(FRCVisionLibrary.goal_values['TARGETHEIGHT']) #inches
-        minTargetArea = int(FRCVisionLibrary.goal_values['MINTARGETAREA']) #in square px, for individual pieces of tape, calculated for viewing from ~4ft
-        minRegionArea = int(FRCVisionLibrary.goal_values['MINREGIONAREA']) #in square px, for paired pieces of tape, calculated for viewing from ~4ft
-
-        #Define HSV range for cargo ship vision targets
-        #values with light in Fab Lab
-        hMin = int(FRCVisionLibrary.goal_values['HMIN'])
-        hMax = int(FRCVisionLibrary.goal_values['HMAX'])
-        sMin = int(FRCVisionLibrary.goal_values['SMIN'])
-        sMax = int(FRCVisionLibrary.goal_values['SMAX'])
-        vMin = int(FRCVisionLibrary.goal_values['VMIN'])
-        vMax = int(FRCVisionLibrary.goal_values['VMAX'])
-        visionTargetHSVMin = (hMin, sMin, vMin)
-        visionTargetHSVMax = (hMax, sMax, vMax)
-
-        #List to collect datapoints of all contours located
-        #Append tuples in form (x, y, w, h, a)
-        visionTargetValues = []
-
-        #List to collect datapoints and area of all paired contours calculated
-        #Append tuples in form (regionArea, x, y, w, h)
-        visionRegionValues = []
-
-        #Other processing values
-        inchesPerPixel = -1
-        diffTargets = -1
+    #Define general tape detection method (rectangle good for generic vision tape targets)
+    def detect_tape_rectangle(self, imgRaw):
     
+        #Read HSV values from dictionary and make tupples
+        hMin = int(FRCVisionLibrary.tape_values['HMIN'])
+        hMax = int(FRCVisionLibrary.tape_values['HMAX'])
+        sMin = int(FRCVisionLibrary.tape_values['SMIN'])
+        sMax = int(FRCVisionLibrary.tape_values['SMAX'])
+        vMin = int(FRCVisionLibrary.tape_values['VMIN'])
+        vMax = int(FRCVisionLibrary.tape_values['VMAX'])
+        tapeHSVMin = (hMin, sMin, vMin)
+        tapeHSVMax = (hMax, sMax, vMax)
+
         #Values to be returned
         targetX = -1
         targetY = -1
         targetW = -1
         targetH = -1
         centerOffset = 0
-        distanceToVisionTarget = 0
-        angleToVisionTarget = 0
-        foundVisionTarget = False
-
-        #Find contours in mask
-        visionTargetContours = self.process_image_contours(imgRaw, visionTargetHSVMin, visionTargetHSVMax)
+        distanceToTape = 0
+        horizAngleToTape = 0
+        vertAngleToTape = 0
+        foundTape = False
     
-        #only continue if contours are found
-        if len(visionTargetContours) > 0:
-        
-            #Loop over all contours
-            for testContour in visionTargetContours:
+        #Find alignment tape in image
+        tapeContours = self.process_image_contours(imgRaw, tapeHSVMin, tapeHSVMax)
+  
+        #Continue with processing if alignment tape found
+        if len(tapeContours) > 0:
 
-             #Get bounding rectangle dimensions
-                x, y, w, h = cv.boundingRect(testContour)
-                rect = cv.minAreaRect(testContour)
-                a = rect[2]
-                box = cv.boxPoints(rect)
-                box = np.int0(box)
-                   
-
-                #If large enough, draw a rectangle and store the values in the list
-                if cv.contourArea(testContour) > minTargetArea:
-
-                    #this method will draw an angled box around the contour
-                    cv.drawContours(imgRaw,[box],0,(0,0,255),2)     
-
-                    visionTargetTuple = (x, y, w, h, a)
-                    visionTargetValues.append(visionTargetTuple)
-
-            #Only continue if two appropriately sized contours were found
-            if len(visionTargetValues) > 1:
-
-                #Sort the contours found into a left-to-right order (sorting by x-value)
-                visionTargetValues.sort(key=itemgetter(0))
-
-                #Compare each contour to the next-right-most contour to determine distance between them
-                for i in range(len(visionTargetValues) - 1):
-
-                    #Create a conversion factor between inches and pixels with a known value (the target height)
-                    #and the height of the left-most contour found
-                    inchesPerPixel = visionTargetHeight/visionTargetValues[i][3]
-                
-                    #Calculate the pixel difference between contours (right x - (left x + left width))
-                    diffTargets = visionTargetValues[i + 1][0] - (visionTargetValues[i][0] + visionTargetValues[i][2])
-                
-                    #Check the distance against the expected angle with a tolerance, check the area, and store 
-                    #the matched pairs in the indices list
-                    rightAngleGood = visionTargetValues[i + 1][4] < -10 and visionTargetValues[i + 1][4] > -20
-                    leftAngleGood = visionTargetValues[i][4] < -70 and visionTargetValues[i][4] > -80
-
-                    if leftAngleGood and rightAngleGood:
-
-                        #Calculate area of region found (height * (left width + right width + diffTargets))
-                        regionHeight = visionTargetValues[i][3] #using left height
-                        regionWidth = visionTargetValues[i][2] + visionTargetValues[i + 1][2] + diffTargets
-                        regionArea = regionWidth * regionHeight
-
-                        #Check area and draw rectangle (for testing)
-                        if regionArea > minRegionArea:
-
-                            x = visionTargetValues[i][0]
-                            y = visionTargetValues[i][1]
-                            w = regionWidth
-                            h = regionHeight
-                            cv.rectangle(imgRaw,(x,y),(x+w,y+h),(0,0,255),1) 
+            #find the largest contour and check it against the mininum tape area
+            largestContour = max(tapeContours, key=cv.contourArea)
                         
-                            visionRegionTuple = (regionArea, x, y, w, h)
-                            visionRegionValues.append(visionRegionTuple)
-                        
-                #Only proceed if an appropriately sized merged region is found
-                if len(visionRegionValues) > 0:
+            if cv.contourArea(largestContour) > int(FRCVisionLibrary.tape_values['MINAREA']):
+                
+                targetX, targetY, targetW, targetH = cv.boundingRect(largestContour)
+                cv.rectangle(imgRaw,(targetX,targetY),(targetX+targetW,targetY+targetH),(0,0,255),2)  
+                foundTape = True
 
-                    #Sort the collected paired regions from largest area to smallest area (largest area is index 0)
-                    visionRegionValues.sort(key=itemgetter(0), reverse = True)
+            #calculate real world values of found tape
+            if foundTape:
+                inchesPerPixel = float(FRCVisionLibrary.tape_values['TAPEHEIGHT']) / targetH
+                distanceToTape = inchesPerPixel * (int(FRCVisionLibrary.camera_values['WIDTH']) / (2 * math.tan(math.radians(float(FRCVisionLibrary.camera_values['FOV'])))))
+                horizOffsetInInches = inchesPerPixel * ((targetX + targetW/2) - int(FRCVisionLibrary.camera_values['WIDTH']) / 2)
+                horizAngleToTape = math.degrees(math.atan((horizOffsetInInches / distanceToTape)))
+                vertOffsetInInches = inchesPerPixel * ((int(FRCVisionLibrary.camera_values['HEIGHT']) / 2) - (targetY - targetH/2))
+                vertAngleToTape = math.degrees(math.atan((vertOffsetInInches / distanceToTape)))
+                centerOffset = -horizOffsetInInches
 
-                    #Assign final values to be returned
-                    targetX = visionRegionValues[0][1]
-                    targetY = visionRegionValues[0][2]
-                    targetW = visionRegionValues[0][3]
-                    targetH = visionRegionValues[0][4]
-
-                    foundVisionTarget = True
-                                
-                    distanceToVisionTarget = inchesPerPixel * (imgWidthVision / (2 * math.tan(math.radians(cameraFieldOfView))))
-                    offsetInInches = inchesPerPixel * ((targetX + targetW/2) - imgWidthVision / 2)
-                    angleToVisionTarget = math.degrees(math.atan((offsetInInches / distanceToVisionTarget)))
-                    centerOffset = -offsetInInches
-
-        #Return results
-        return targetX, targetY, targetW, targetH, distanceToVisionTarget, angleToVisionTarget, centerOffset, foundVisionTarget
+        return targetX, targetY, targetW, targetH, centerOffset, distanceToTape, horizAngleToTape, vertAngleToTape, foundTape
 
 
     #Read vision settings file
