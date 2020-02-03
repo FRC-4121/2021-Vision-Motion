@@ -30,9 +30,9 @@
 #                                                                                              #
 #  Creation Date: 3/1/2018                                                                     #
 #                                                                                              #
-#  Revision: 3.0                                                                               #
+#  Revision: 4.0                                                                               #
 #                                                                                              #
-#  Revision Date: 2/18/2019                                                                    #
+#  Revision Date: 2/2/2020                                                                    #
 #                                                                                              #
 #----------------------------------------------------------------------------------------------#
 
@@ -44,6 +44,7 @@ import imp
 
 #Setup paths
 sys.path.append('/home/pi/.local/lib/python3.5/site-packages')
+sys.path.append('/home/pi/Programs/Python/Libraries')
 sys.path.append('/usr/local/lib/vmxpi/')
 
 #Module imports
@@ -66,308 +67,24 @@ logging.basicConfig(level=logging.DEBUG)
 #Initialize operating constants
 imgWidthVision = 320  
 imgHeightVision = 240
-imgWidthDriver = 160
-imgHeightDriver = 120
 #cameraFieldOfView = 23.5 #value designated for vision tape
 cameraFieldOfView = 27.3
-
 
 #Define program control flags
 writeVideo = True
 sendVisionToDashboard = True
-
-#Define image processing method
-def process_image(imgRaw, hsvMin, hsvMax):
-    
-    #Blur image to remove noise
-    blur = cv.GaussianBlur(imgRaw.copy(),(13,13),0)
-        
-    #Convert from BGR to HSV colorspace
-    hsv = cv.cvtColor(blur, cv.COLOR_BGR2HSV)
-
-    #Set pixels to white if in target HSV range, else set to black
-    mask = cv.inRange(hsv, hsvMin, hsvMax)
-
-    #Find contours in mask
-    _, contours, _ = cv.findContours(mask,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE)
-    
-    return contours
-
-
-#Define processing class
-def detect_ball_target(imgRaw):
-
-    #Define constraints for ball detection
-    ballRadius = 3.5 #in inches
-    minRadius = 5 #in pixels, this can be tweaked as needed
-
-    #Define the lower and upper boundaries of the "green"
-    #ball in the HSV color space
-    ballHSVMin = (20, 77, 116)
-    ballHSVMax = (77, 255, 255)
-   
-    #Values to be returned
-    targetRadius = 0 #px
-    targetX = -1 #px
-    targetY = -1 #px
-    distanceToBall = 0 #inches
-    angleToBall = 0 #degrees
-    ballOffset = 0
-    screenPercent = 0
-    foundBall = False;
-
-    #List of ball x, y, radius.  Append in form (x, y, radius)
-    ballValues = []
-
-    #Find contours in the mask and clean up the return style from OpenCV
-    ballContours = process_image(imgRaw, ballHSVMin, ballHSVMax)
-
-    if len(ballContours) == 2:
-        ballContours = ballContours[0]
-    elif len(ballContours) == 3:
-        ballContours = ballContours[1]
-
-    #Only proceed if at least one contour was found
-    if len(ballContours) > 0:
- 
-        #largestContour = max(ballContours, key=cv.contourArea)
-        for contour in ballContours:
-            
-            ((x, y), radius) = cv.minEnclosingCircle(contour)
-
-            if radius > minRadius:
-
-                #ballTuple = (x, y, radius)
-                #ballValues.append(ballTuple)
-                
-                if radius > targetRadius:
-
-                    targetRadius = radius
-                    targetX = x
-                    targetY = y
-                    foundBall = True
-
-        #Distance and angle offset calculations
-        if targetRadius > 0:
-            
-            inches_per_pixel = ballRadius/targetRadius #set up a general conversion factor
-            distanceToBall = inches_per_pixel * (imgWidthVision / (2 * math.tan(math.radians(cameraFieldOfView))))
-            offsetInInches = inches_per_pixel * (targetX - imgWidthVision / 2)
-            angleToBall = math.degrees(math.atan((offsetInInches / distanceToBall)))
-            screenPercent = math.pi * targetRadius * targetRadius / (imgWidthVision * imgHeightVision)
-            ballOffset = -offsetInInches
-          
-        else:
-            
-            distanceToBall = -1
-            angleToBall = -1
-
-        for ball in ballValues:
-
-            cv.circle(imgRaw, (int(ball[0]), int(ball[1])), int(ball[2]), (0, 255, 0), 2)
-
-        #cv.circle(imgRaw, (int(targetX), int(targetY)), int(targetRadius), (0, 0, 255), 2) #Draw a red circle around largest ball detected
-
-    return targetX, targetY, targetRadius, distanceToBall, angleToBall, ballOffset, screenPercent, foundBall
-
-    
-#Define general tape detection method (rectangle good for generic vision tape targets)
-def detect_tape_rectangle(imgRaw):
-    
-    #Define constraints for detecting floor tape
-    tapeWidth = 39.25 #in inches
-    tapeHeight = 17.0 #in inches
-    minTapeArea = 50 #in square px, can be tweaked if needed
-
-    #Define HSV range for white alignment tape
-    tapeHSVMin = (60, 90, 80)
-    tapeHSVMax = (115, 255, 255)
-
-    #Values to be returned
-    targetX = -1
-    targetY = -1
-    targetW = -1
-    targetH = -1
-    centerOffset = 0
-    distanceToTape = 0
-    horizAngleToTape = 0
-    vertAngleToTape = 0
-    foundTape = False
-    
-    #Find alignment tape in image
-    tapeContours = process_image(imgRaw, tapeHSVMin, tapeHSVMax)
-  
-    #Continue with processing if alignment tape found
-    if len(tapeContours) > 0:
-
-        #find the largest contour and check it against the mininum tape area
-        #largestContour = max(tapeContours, key=cv.contourArea)
-        largestContour = tapeContours[0]
-
-        for contour in tapeContours:
-            
-            if cv.contourArea(contour) > minTapeArea:
-                
-                x, y, w, h = cv.boundingRect(contour)
-                cv.rectangle(imgRaw,(x,y),(x+w,y+h),(0,0,255),2) #floor tape
-
-                if cv.contourArea(contour) > cv.contourArea(largestContour):
-                    largestContour = contour
-  
-        targetX, targetY, targetW, targetH = cv.boundingRect(largestContour)
-        foundTape = True
-
-        #calculate real world values of tape
-        inchesPerPixel = float(tapeHeight) / targetH
-        distanceToTape = inchesPerPixel * (imgWidthVision / (2 * math.tan(math.radians(cameraFieldOfView))))
-        horizOffsetInInches = inchesPerPixel * ((targetX + targetW/2) - imgWidthVision / 2)
-        horizAngleToTape = math.degrees(math.atan((horizOffsetInInches / distanceToTape)))
-        vertOffsetInInches = inchesPerPixel * ((imgHeightVision / 2) - (targetY - targetH/2))
-        vertAngleToTape = math.degrees(math.atan((vertOffsetInInches / distanceToTape)))
-        centerOffset = -horizOffsetInInches
-
-    return targetX, targetY, targetW, targetH, centerOffset, distanceToTape, horizAngleToTape, vertAngleToTape, foundTape
-
-
-#Define contour detector function
-def detect_vision_targets(imgRaw):
-
-    #Set constraints for detecting vision targets
-    visionTargetWidth = 3.313 #in inches
-    visionTargetHeight = 5.826 #in inches
-    minTargetArea = 300 #in square px, for individual pieces of tape, calculated for viewing from ~4ft
-    minRegionArea = 2000 #in square px, for paired pieces of tape, calculated for viewing from ~4ft
-
-    #Define HSV range for cargo ship vision targets
-    #values with light in Fab Lab
-    visionTargetHSVMin = (59, 0, 78)
-    visionTargetHSVMax = (114, 255, 255)
-
-    #List to collect datapoints of all contours located
-    #Append tuples in form (x, y, w, h, a)
-    visionTargetValues = []
-
-    #List to collect datapoints and area of all paired contours calculated
-    #Append tuples in form (regionArea, x, y, w, h)
-    visionRegionValues = []
-
-    #Other processing values
-    inchesPerPixel = -1
-    diffTargets = -1
-    
-    #Values to be returned
-    targetX = -1
-    targetY = -1
-    targetW = -1
-    targetH = -1
-    centerOffset = 0
-    distanceToVisionTarget = 0
-    angleToVisionTarget = 0
-    foundVisionTarget = False
-
-    #Find contours in mask
-    visionTargetContours = process_image(imgRaw, visionTargetHSVMin, visionTargetHSVMax)
-    
-    #only continue if contours are found
-    if len(visionTargetContours) > 0:
-        
-        #Loop over all contours
-        for testContour in visionTargetContours:
-
-            #Get bounding rectangle dimensions
-            x, y, w, h = cv.boundingRect(testContour)
-            rect = cv.minAreaRect(testContour)
-            a = rect[2]
-            box = cv.boxPoints(rect)
-            box = np.int0(box)
-                   
-
-            #If large enough, draw a rectangle and store the values in the list
-            if cv.contourArea(testContour) > minTargetArea:
-
-                #this method will draw an angled box around the contour
-                cv.drawContours(imgRaw,[box],0,(0,0,255),2)     
-
-                visionTargetTuple = (x, y, w, h, a)
-                visionTargetValues.append(visionTargetTuple)
-
-        #Only continue if two appropriately sized contours were found
-        if len(visionTargetValues) > 1:
-
-            #Sort the contours found into a left-to-right order (sorting by x-value)
-            visionTargetValues.sort(key=itemgetter(0))
-
-            #Compare each contour to the next-right-most contour to determine distance between them
-            for i in range(len(visionTargetValues) - 1):
-
-                #Create a conversion factor between inches and pixels with a known value (the target height)
-                #and the height of the left-most contour found
-                inchesPerPixel = visionTargetHeight/visionTargetValues[i][3]
-                
-                #Calculate the pixel difference between contours (right x - (left x + left width))
-                diffTargets = visionTargetValues[i + 1][0] - (visionTargetValues[i][0] + visionTargetValues[i][2])
-                
-                #Check the distance against the expected angle with a tolerance, check the area, and store 
-                #the matched pairs in the indices list
-                rightAngleGood = visionTargetValues[i + 1][4] < -10 and visionTargetValues[i + 1][4] > -20
-                leftAngleGood = visionTargetValues[i][4] < -70 and visionTargetValues[i][4] > -80
-
-                if leftAngleGood and rightAngleGood:
-
-                    #Calculate area of region found (height * (left width + right width + diffTargets))
-                    regionHeight = visionTargetValues[i][3] #using left height
-                    regionWidth = visionTargetValues[i][2] + visionTargetValues[i + 1][2] + diffTargets
-                    regionArea = regionWidth * regionHeight
-
-                    #Check area and draw rectangle (for testing)
-                    if regionArea > minRegionArea:
-
-                        x = visionTargetValues[i][0]
-                        y = visionTargetValues[i][1]
-                        w = regionWidth
-                        h = regionHeight
-                        cv.rectangle(imgRaw,(x,y),(x+w,y+h),(0,0,255),1) 
-                        
-                        visionRegionTuple = (regionArea, x, y, w, h)
-                        visionRegionValues.append(visionRegionTuple)
-                        
-            #Only proceed if an appropriately sized merged region is found
-            if len(visionRegionValues) > 0:
-
-                #Sort the collected paired regions from largest area to smallest area (largest area is index 0)
-                visionRegionValues.sort(key=itemgetter(0), reverse = True)
-
-                #Assign final values to be returned
-                targetX = visionRegionValues[0][1]
-                targetY = visionRegionValues[0][2]
-                targetW = visionRegionValues[0][3]
-                targetH = visionRegionValues[0][4]
-
-                foundVisionTarget = True
-                                
-                distanceToVisionTarget = inchesPerPixel * (imgWidthVision / (2 * math.tan(math.radians(cameraFieldOfView))))
-                offsetInInches = inchesPerPixel * ((targetX + targetW/2) - imgWidthVision / 2)
-                angleToVisionTarget = math.degrees(math.atan((offsetInInches / distanceToVisionTarget)))
-                centerOffset = -offsetInInches
-
-    #Return results
-    return targetX, targetY, targetW, targetH, distanceToVisionTarget, angleToVisionTarget, centerOffset, foundVisionTarget
 
 
 #Define main processing function
 def main():
 
     #Define global variables
-    global imgWidthDriver
-    global imgHeightDriver
     global imgWidthVision
     global imgHeightVision
     global writeVideo
 
     #Define camera configuration variables
-    driverCameraBrightness = 1
     visionCameraBrightness = 25
-    driverFramesPerSecond = 15
     visionFramesPerSecond = 15
     visionCameraExposure = 40
    
@@ -410,7 +127,7 @@ def main():
         log_file.write('Connected to Networktables on 10.41.21.2 \n')
     except:
         log_file.write('Error:  Unable to connect to Network tables.\n')
-        log_file.write('Error message: ', sys.exec_info()[0])
+        log_file.write('Error message: ', sys.exc_info()[0])
         log_file.write('\n')
 
 ##    #Navx configuration
@@ -453,7 +170,7 @@ def main():
         log_file.write('Connected to vision camera on Path = %s.\n' % visionCameraPath)
     except:
         log_file.write('Error:  Unable to connect to vision camera.\n')
-        log_file.write('Error message: ', sys.exec_info()[0])
+        log_file.write('Error message: ', sys.exc_info()[0])
         log_file.write('\n')        
 
     #Define vision video sink
