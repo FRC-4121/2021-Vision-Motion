@@ -34,7 +34,6 @@ class VisionLibrary:
 
     #Define class fields
     visionFile = ""
-    camera_values = {}
     ball_values = {}
     goal_values = {}
     tape_values = {}
@@ -59,7 +58,7 @@ class VisionLibrary:
 
 
     #Find ball game pieces
-    def detect_game_balls(self, imgRaw):
+    def detect_game_balls(self, imgRaw, cameraWidth, cameraHeight, cameraFOV):
 
         #Read HSV values from dictionary and make tuples
         hMin = int(VisionLibrary.ball_values['HMIN'])
@@ -112,10 +111,10 @@ class VisionLibrary:
             if targetRadius > 0:
             
                 inches_per_pixel = float(VisionLibrary.ball_values['RADIUS'])/targetRadius #set up a general conversion factor
-                distanceToBall = inches_per_pixel * (int(VisionLibrary.camera_values['WIDTH']) / (2 * math.tan(math.radians(float(VisionLibrary.camera_values['FOV'])))))
-                offsetInInches = inches_per_pixel * (targetX - int(VisionLibrary.camera_values['WIDTH']) / 2)
+                distanceToBall = inches_per_pixel * (cameraWidth / (2 * math.tan(math.radians(cameraFOV))))
+                offsetInInches = inches_per_pixel * ((targetX - cameraWidth) / 2)
                 angleToBall = math.degrees(math.atan((offsetInInches / distanceToBall)))
-                screenPercent = math.pi * targetRadius * targetRadius / (int(VisionLibrary.camera_values['WIDTH']) * int(VisionLibrary.camera_values['HEIGHT']))
+                screenPercent = math.pi * targetRadius * targetRadius / (cameraWidth * cameraHeight)
                 ballOffset = -offsetInInches
           
             else:
@@ -129,7 +128,7 @@ class VisionLibrary:
 
 
     #Define general tape detection method (rectangle good for generic vision tape targets)
-    def detect_tape_rectangle(self, imgRaw):
+    def detect_tape_rectangle(self, imgRaw, cameraWidth, cameraHeight, cameraFOV):
     
         #Read HSV values from dictionary and make tupples
         hMin = int(VisionLibrary.tape_values['HMIN'])
@@ -170,10 +169,10 @@ class VisionLibrary:
             #calculate real world values of found tape
             if foundTape:
                 inchesPerPixel = float(VisionLibrary.tape_values['TAPEHEIGHT']) / targetH
-                distanceToTape = inchesPerPixel * (int(VisionLibrary.camera_values['WIDTH']) / (2 * math.tan(math.radians(float(VisionLibrary.camera_values['FOV'])))))
-                horizOffsetInInches = inchesPerPixel * ((targetX + targetW/2) - int(VisionLibrary.camera_values['WIDTH']) / 2)
+                distanceToTape = inchesPerPixel * (cameraWidth / (2 * math.tan(math.radians(cameraFOV))))
+                horizOffsetInInches = inchesPerPixel * ((targetX + targetW/2) - cameraWidth / 2)
                 horizAngleToTape = math.degrees(math.atan((horizOffsetInInches / distanceToTape)))
-                vertOffsetInInches = inchesPerPixel * ((int(VisionLibrary.camera_values['HEIGHT']) / 2) - (targetY - targetH/2))
+                vertOffsetInInches = inchesPerPixel * ((cameraHeight / 2) - (targetY - targetH/2))
                 vertAngleToTape = math.degrees(math.atan((vertOffsetInInches / distanceToTape)))
                 centerOffset = -horizOffsetInInches
 
@@ -206,10 +205,7 @@ class VisionLibrary:
                 split_line = clean_line.split(',')
 
                 #Determine section of the file we are in
-                if split_line[0].upper() == 'CAMERA:':
-                    value_section = 'CAMERA'
-                    new_section = True
-                elif split_line[0].upper() == 'BALL:':
+                if split_line[0].upper() == 'BALL:':
                     value_section = 'BALL'
                     new_section = True
                 elif split_line[0].upper() == 'GOALTARGET:':
@@ -226,9 +222,7 @@ class VisionLibrary:
 
                 #Take action based on section
                 if new_section == False:
-                    if value_section == 'CAMERA':
-                        VisionLibrary.camera_values[split_line[0].upper()] = split_line[1]
-                    elif value_section == 'BALL':
+                    if value_section == 'BALL':
                         VisionLibrary.ball_values[split_line[0].upper()] = split_line[1]
                     elif value_section == 'GOALTARGET':
                         VisionLibrary.goal_values[split_line[0].upper()] = split_line[1]
