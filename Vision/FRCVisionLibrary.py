@@ -30,7 +30,7 @@ import numpy as np
 import math
 
 #Define the vision library class
-class FRCVisionLibrary:
+class VisionLibrary:
 
     #Define class fields
     visionFile = ""
@@ -62,12 +62,12 @@ class FRCVisionLibrary:
     def detect_game_balls(self, imgRaw):
 
         #Read HSV values from dictionary and make tuples
-        hMin = int(FRCVisionLibrary.ball_values['HMIN'])
-        hMax = int(FRCVisionLibrary.ball_values['HMAX'])
-        sMin = int(FRCVisionLibrary.ball_values['SMIN'])
-        sMax = int(FRCVisionLibrary.ball_values['SMAX'])
-        vMin = int(FRCVisionLibrary.ball_values['VMIN'])
-        vMax = int(FRCVisionLibrary.ball_values['VMAX'])
+        hMin = int(VisionLibrary.ball_values['HMIN'])
+        hMax = int(VisionLibrary.ball_values['HMAX'])
+        sMin = int(VisionLibrary.ball_values['SMIN'])
+        sMax = int(VisionLibrary.ball_values['SMAX'])
+        vMin = int(VisionLibrary.ball_values['VMIN'])
+        vMax = int(VisionLibrary.ball_values['VMAX'])
         ballHSVMin = (hMin, sMin, vMin)
         ballHSVMax = (hMax, sMax, vMax)
         
@@ -97,7 +97,7 @@ class FRCVisionLibrary:
             
                 ((x, y), radius) = cv.minEnclosingCircle(contour)
 
-                if radius > float(FRCVisionLibrary.ball_values['MINRADIUS']):
+                if radius > float(VisionLibrary.ball_values['MINRADIUS']):
 
                     cv.circle(imgRaw, (int(x), int(y)), int(radius), (0, 255, 0), 2) #Draw a green circle around all balls detected
 
@@ -111,11 +111,11 @@ class FRCVisionLibrary:
             #Distance and angle offset calculations
             if targetRadius > 0:
             
-                inches_per_pixel = float(FRCVisionLibrary.ball_values['RADIUS'])/targetRadius #set up a general conversion factor
-                distanceToBall = inches_per_pixel * (int(FRCVisionLibrary.camera_values['WIDTH']) / (2 * math.tan(math.radians(float(FRCVisionLibrary.camera_values['FOV'])))))
-                offsetInInches = inches_per_pixel * (targetX - int(FRCVisionLibrary.camera_values['WIDTH']) / 2)
+                inches_per_pixel = float(VisionLibrary.ball_values['RADIUS'])/targetRadius #set up a general conversion factor
+                distanceToBall = inches_per_pixel * (int(VisionLibrary.camera_values['WIDTH']) / (2 * math.tan(math.radians(float(VisionLibrary.camera_values['FOV'])))))
+                offsetInInches = inches_per_pixel * (targetX - int(VisionLibrary.camera_values['WIDTH']) / 2)
                 angleToBall = math.degrees(math.atan((offsetInInches / distanceToBall)))
-                screenPercent = math.pi * targetRadius * targetRadius / (int(FRCVisionLibrary.camera_values['WIDTH']) * int(FRCVisionLibrary.camera_values['HEIGHT']))
+                screenPercent = math.pi * targetRadius * targetRadius / (int(VisionLibrary.camera_values['WIDTH']) * int(VisionLibrary.camera_values['HEIGHT']))
                 ballOffset = -offsetInInches
           
             else:
@@ -132,12 +132,12 @@ class FRCVisionLibrary:
     def detect_tape_rectangle(self, imgRaw):
     
         #Read HSV values from dictionary and make tupples
-        hMin = int(FRCVisionLibrary.tape_values['HMIN'])
-        hMax = int(FRCVisionLibrary.tape_values['HMAX'])
-        sMin = int(FRCVisionLibrary.tape_values['SMIN'])
-        sMax = int(FRCVisionLibrary.tape_values['SMAX'])
-        vMin = int(FRCVisionLibrary.tape_values['VMIN'])
-        vMax = int(FRCVisionLibrary.tape_values['VMAX'])
+        hMin = int(VisionLibrary.tape_values['HMIN'])
+        hMax = int(VisionLibrary.tape_values['HMAX'])
+        sMin = int(VisionLibrary.tape_values['SMIN'])
+        sMax = int(VisionLibrary.tape_values['SMAX'])
+        vMin = int(VisionLibrary.tape_values['VMIN'])
+        vMax = int(VisionLibrary.tape_values['VMAX'])
         tapeHSVMin = (hMin, sMin, vMin)
         tapeHSVMax = (hMax, sMax, vMax)
 
@@ -161,7 +161,7 @@ class FRCVisionLibrary:
             #find the largest contour and check it against the mininum tape area
             largestContour = max(tapeContours, key=cv.contourArea)
                         
-            if cv.contourArea(largestContour) > int(FRCVisionLibrary.tape_values['MINAREA']):
+            if cv.contourArea(largestContour) > int(VisionLibrary.tape_values['MINAREA']):
                 
                 targetX, targetY, targetW, targetH = cv.boundingRect(largestContour)
                 cv.rectangle(imgRaw,(targetX,targetY),(targetX+targetW,targetY+targetH),(0,0,255),2)  
@@ -169,11 +169,11 @@ class FRCVisionLibrary:
 
             #calculate real world values of found tape
             if foundTape:
-                inchesPerPixel = float(FRCVisionLibrary.tape_values['TAPEHEIGHT']) / targetH
-                distanceToTape = inchesPerPixel * (int(FRCVisionLibrary.camera_values['WIDTH']) / (2 * math.tan(math.radians(float(FRCVisionLibrary.camera_values['FOV'])))))
-                horizOffsetInInches = inchesPerPixel * ((targetX + targetW/2) - int(FRCVisionLibrary.camera_values['WIDTH']) / 2)
+                inchesPerPixel = float(VisionLibrary.tape_values['TAPEHEIGHT']) / targetH
+                distanceToTape = inchesPerPixel * (int(VisionLibrary.camera_values['WIDTH']) / (2 * math.tan(math.radians(float(VisionLibrary.camera_values['FOV'])))))
+                horizOffsetInInches = inchesPerPixel * ((targetX + targetW/2) - int(VisionLibrary.camera_values['WIDTH']) / 2)
                 horizAngleToTape = math.degrees(math.atan((horizOffsetInInches / distanceToTape)))
-                vertOffsetInInches = inchesPerPixel * ((int(FRCVisionLibrary.camera_values['HEIGHT']) / 2) - (targetY - targetH/2))
+                vertOffsetInInches = inchesPerPixel * ((int(VisionLibrary.camera_values['HEIGHT']) / 2) - (targetY - targetH/2))
                 vertAngleToTape = math.degrees(math.atan((vertOffsetInInches / distanceToTape)))
                 centerOffset = -horizOffsetInInches
 
@@ -227,13 +227,13 @@ class FRCVisionLibrary:
                 #Take action based on section
                 if new_section == False:
                     if value_section == 'CAMERA':
-                        FRCVisionLibrary.camera_values[split_line[0].upper()] = split_line[1]
+                        VisionLibrary.camera_values[split_line[0].upper()] = split_line[1]
                     elif value_section == 'BALL':
-                        FRCVisionLibrary.ball_values[split_line[0].upper()] = split_line[1]
+                        VisionLibrary.ball_values[split_line[0].upper()] = split_line[1]
                     elif value_section == 'GOALTARGET':
-                        FRCVisionLibrary.goal_values[split_line[0].upper()] = split_line[1]
+                        VisionLibrary.goal_values[split_line[0].upper()] = split_line[1]
                     elif value_section == 'VISIONTAPE':
-                        FRCVisionLibrary.tape_values[split_line[0].upper()] = split_line[1]
+                        VisionLibrary.tape_values[split_line[0].upper()] = split_line[1]
                     else:
                         new_section = True
         
@@ -247,5 +247,5 @@ class FRCVisionLibrary:
     def __init__(self, visionfile):
         
         #Read in vision settings file
-        FRCVisionLibrary.visionFile = visionfile
-        self.read_vision_file(FRCVisionLibrary.visionFile)
+        VisionLibrary.visionFile = visionfile
+        self.read_vision_file(VisionLibrary.visionFile)
