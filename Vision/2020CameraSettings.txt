@@ -1,0 +1,8 @@
+BallCamFOV,27.3
+BallCamWidth,320
+BallCamHeight,240
+BallCamFPS,15
+GoalCamFOV,27.3
+GoalCamWidth,320
+GoalCamHeight,240
+GoalCamFPS,15
