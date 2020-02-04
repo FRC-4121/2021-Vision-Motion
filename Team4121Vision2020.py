@@ -44,7 +44,7 @@ import imp
 
 #Setup paths
 sys.path.append('/home/pi/.local/lib/python3.5/site-packages')
-sys.path.append('/home/pi/Programs/Python/Libraries')
+sys.path.append('/home/pi/Team4121/Libraries')
 sys.path.append('/usr/local/lib/vmxpi/')
 
 #Module imports
@@ -61,10 +61,15 @@ from cscore import CameraServer
 from networktables import NetworkTables
 from time import sleep
 
+#Team 4121 module imports
+from FRCVisionLibrary import VisionLibrary
+
 #Set up basic logging
 logging.basicConfig(level=logging.DEBUG)
 
-#Initialize operating constants
+#Declare global variables
+cameraFile = '/home/pi/Team4121/Config/2020CameraSettings.txt'
+cameraValues={}
 imgWidthVision = 320  
 imgHeightVision = 240
 #cameraFieldOfView = 23.5 #value designated for vision tape
@@ -73,6 +78,44 @@ cameraFieldOfView = 27.3
 #Define program control flags
 writeVideo = True
 sendVisionToDashboard = True
+
+
+#Read vision settings file
+def read_settings_file(file):
+
+    #Open the file and read contents
+    try:
+            
+        #Open the file for reading
+        in_file = open(file, 'r')
+            
+        #Read in all lines
+        value_list = in_file.readlines()
+            
+        #Process list of lines
+        for line in value_list:
+                
+            #Remove trailing newlines and whitespace
+            clean_line = line.strip()
+
+            #Split the line into parts
+            split_line = clean_line.split(',')
+
+            #Save the value into dictionary
+            cameraValues[split_line[0]] = split_line[1]
+
+    except:
+
+        cameraValues['BallCamFOV'] = 27.3
+        cameraValues['BallCamWidth'] = 320
+        cameraValues['BallCamHeight'] = 240
+        cameraValues['BallCamFPS'] = 15
+        cameraValues['BallCamCalFactor'] = 1
+        cameraValues['GoalCamFOV'] = 27.3
+        cameraValues['GoalCamWidth'] = 320
+        cameraValues['GoalCamHeight'] = 240
+        cameraValues['GoalCamFPS'] = 15
+        cameraValues['GoalCamCalFactor'] = 1
 
 
 #Define main processing function
