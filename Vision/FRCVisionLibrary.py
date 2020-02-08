@@ -37,7 +37,73 @@ class VisionLibrary:
     ball_values = {}
     goal_values = {}
     tape_values = {}
-    
+
+
+    #Define class initialization
+    def __init__(self, visionfile):
+        
+        #Read in vision settings file
+        VisionLibrary.visionFile = visionfile
+        self.read_vision_file(VisionLibrary.visionFile)
+
+
+    #Read vision settings file
+    def read_vision_file(self, file):
+
+        #Declare local variables
+        value_section = ''
+        new_section = False
+
+        #Open the file and read contents
+        try:
+            
+            #Open the file for reading
+            in_file = open(file, 'r')
+            
+            #Read in all lines
+            value_list = in_file.readlines()
+            
+            #Process list of lines
+            for line in value_list:
+                
+                #Remove trailing newlines and whitespace
+                clean_line = line.strip()
+
+                #Split the line into parts
+                split_line = clean_line.split(',')
+
+                #Determine section of the file we are in
+                if split_line[0].upper() == 'BALL:':
+                    value_section = 'BALL'
+                    new_section = True
+                elif split_line[0].upper() == 'GOALTARGET:':
+                    value_section = 'GOALTARGET'
+                    new_section = True
+                elif split_line[0].upper() == 'VISIONTAPE:':
+                    value_section = 'VISIONTAPE'
+                    new_section = True
+                elif split_line[0] == '':
+                    value_section = ''
+                    new_section = True
+                else:
+                    new_section = False
+
+                #Take action based on section
+                if new_section == False:
+                    if value_section == 'BALL':
+                        VisionLibrary.ball_values[split_line[0].upper()] = split_line[1]
+                    elif value_section == 'GOALTARGET':
+                        VisionLibrary.goal_values[split_line[0].upper()] = split_line[1]
+                    elif value_section == 'VISIONTAPE':
+                        VisionLibrary.tape_values[split_line[0].upper()] = split_line[1]
+                    else:
+                        new_section = True
+        
+        except FileNotFoundError:
+            return False
+        
+        return True
+
 
     #Define basic image processing method for contours
     def process_image_contours(self, imgRaw, hsvMin, hsvMax):
@@ -178,68 +244,3 @@ class VisionLibrary:
 
         return targetX, targetY, targetW, targetH, centerOffset, distanceToTape, horizAngleToTape, vertAngleToTape, foundTape
 
-
-    #Read vision settings file
-    def read_vision_file(self, file):
-
-        #Declare local variables
-        value_section = ''
-        new_section = False
-
-        #Open the file and read contents
-        try:
-            
-            #Open the file for reading
-            in_file = open(file, 'r')
-            
-            #Read in all lines
-            value_list = in_file.readlines()
-            
-            #Process list of lines
-            for line in value_list:
-                
-                #Remove trailing newlines and whitespace
-                clean_line = line.strip()
-
-                #Split the line into parts
-                split_line = clean_line.split(',')
-
-                #Determine section of the file we are in
-                if split_line[0].upper() == 'BALL:':
-                    value_section = 'BALL'
-                    new_section = True
-                elif split_line[0].upper() == 'GOALTARGET:':
-                    value_section = 'GOALTARGET'
-                    new_section = True
-                elif split_line[0].upper() == 'VISIONTAPE:':
-                    value_section = 'VISIONTAPE'
-                    new_section = True
-                elif split_line[0] == '':
-                    value_section = ''
-                    new_section = True
-                else:
-                    new_section = False
-
-                #Take action based on section
-                if new_section == False:
-                    if value_section == 'BALL':
-                        VisionLibrary.ball_values[split_line[0].upper()] = split_line[1]
-                    elif value_section == 'GOALTARGET':
-                        VisionLibrary.goal_values[split_line[0].upper()] = split_line[1]
-                    elif value_section == 'VISIONTAPE':
-                        VisionLibrary.tape_values[split_line[0].upper()] = split_line[1]
-                    else:
-                        new_section = True
-        
-        except FileNotFoundError:
-            return False
-        
-        return True
-
-
-    #Define class initialization
-    def __init__(self, visionfile):
-        
-        #Read in vision settings file
-        VisionLibrary.visionFile = visionfile
-        self.read_vision_file(VisionLibrary.visionFile)

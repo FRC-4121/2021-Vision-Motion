@@ -70,10 +70,6 @@ logging.basicConfig(level=logging.DEBUG)
 #Declare global variables
 cameraFile = '/home/pi/Team4121/Config/2020CameraSettings.txt'
 cameraValues={}
-imgWidthVision = 320  
-imgHeightVision = 240
-#cameraFieldOfView = 23.5 #value designated for vision tape
-cameraFieldOfView = 27.3
 
 #Define program control flags
 writeVideo = True
@@ -81,13 +77,17 @@ sendVisionToDashboard = True
 
 
 #Read vision settings file
-def read_settings_file(file):
+def read_settings_file():
+
+    #Declare global variables
+    global cameraFile
+    global cameraValues
 
     #Open the file and read contents
     try:
             
         #Open the file for reading
-        in_file = open(file, 'r')
+        in_file = open(cameraFile, 'r')
             
         #Read in all lines
         value_list = in_file.readlines()
@@ -122,14 +122,7 @@ def read_settings_file(file):
 def main():
 
     #Define global variables
-    global imgWidthVision
-    global imgHeightVision
     global writeVideo
-
-    #Define camera configuration variables
-    visionCameraBrightness = 25
-    visionFramesPerSecond = 15
-    visionCameraExposure = 40
    
     #Define local flags
     networkTablesConnected = False
@@ -149,40 +142,19 @@ def main():
     log_file.write('run started on %s.\n' % datetime.datetime.now())
     log_file.write('')
 
-##    #Load VMX module
-##    vmxpi = imp.load_source('vmxpi_hal_python', '/usr/local/lib/vmxpi/vmxpi_hal_python.py')
-##    vmx = vmxpi.VMXPi(False,50)
-##    if vmx.IsOpen() is False:
-##        log_file.write('Error:  Unable to open VMX Client.\n')
-##        log_file.write('\n')
-##        log_file.write('        - Is pigpio (or the system resources it requires) in use by another process?\n')
-##        log_file.write('        - Does this application have root privileges?')
-##        log_file.close()
-##        sys.exit(0)
+    #Read camera settings file
+    read_settings_file()
 
     #Connect NetworkTables
     try:
         NetworkTables.initialize(server='10.41.21.2')
         visionTable = NetworkTables.getTable("vision")
-        navxTable = NetworkTables.getTable("navx")
-        smartDash = NetworkTables.getTable("SmartDashboard")
         networkTablesConnected = True
         log_file.write('Connected to Networktables on 10.41.21.2 \n')
     except:
         log_file.write('Error:  Unable to connect to Network tables.\n')
         log_file.write('Error message: ', sys.exc_info()[0])
         log_file.write('\n')
-
-##    #Navx configuration
-##    navxTable.putNumber("ZeroGyro", 0)
-##    #navxTable.putNumber("ZeroDisplace", 0)
-##
-##    #Reset yaw gyro
-##    vmx.getAHRS().Reset()
-##    vmx.getAHRS().ZeroYaw()
-##
-##    #Reset displacement
-##    vmx.getAHRS().ResetDisplacement()
 
     #Set up a camera server
     camserv = CameraServer.getInstance()
