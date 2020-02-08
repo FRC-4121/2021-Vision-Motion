@@ -110,11 +110,15 @@ def read_settings_file():
         cameraValues['BallCamWidth'] = 320
         cameraValues['BallCamHeight'] = 240
         cameraValues['BallCamFPS'] = 15
+        cameraValues['BallCamBrightness'] = 50
+        cameraValues['BallCamExposure'] = 50
         cameraValues['BallCamCalFactor'] = 1
         cameraValues['GoalCamFOV'] = 27.3
         cameraValues['GoalCamWidth'] = 320
         cameraValues['GoalCamHeight'] = 240
         cameraValues['GoalCamFPS'] = 15
+        cameraValues['GoalCamBrightness'] = 0
+        cameraValues['GoalCamExposure'] = 0
         cameraValues['GoalCamCalFactor'] = 1
 
 
