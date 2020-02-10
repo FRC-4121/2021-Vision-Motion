@@ -43,12 +43,12 @@ import sys
 import imp
 
 #Setup paths
-sys.path.append('/home/pi/.local/lib/python3.5/site-packages')
-sys.path.append('/home/pi/Team4121/Libraries')
-sys.path.append('/usr/local/lib/vmxpi/')
+#sys.path.append('/home/pi/.local/lib/python3.5/site-packages')
+#sys.path.append('/home/pi/Team4121/Libraries')
+#sys.path.append('/usr/local/lib/vmxpi/')
+sys.path.append('C:\\Users\\timfu\\Documents\\Team4121\\Libraries')
 
 #Module imports
-import cv2 as cv
 import numpy as np
 import datetime
 import time
@@ -56,19 +56,19 @@ import logging
 import argparse
 from operator import itemgetter
 import math
-import cscore as cs
-from cscore import CameraServer
 from networktables import NetworkTables
 from time import sleep
 
 #Team 4121 module imports
 from FRCVisionLibrary import VisionLibrary
+from FRCCameraLibrary import FRCWebCam
 
 #Set up basic logging
 logging.basicConfig(level=logging.DEBUG)
 
 #Declare global variables
 cameraFile = '/home/pi/Team4121/Config/2020CameraSettings.txt'
+visionFile = '/home/pi/Team4121/Config/2020VisionSettings.txt'
 cameraValues={}
 
 #Define program control flags
@@ -160,53 +160,32 @@ def main():
         log_file.write('Error message: ', sys.exc_info()[0])
         log_file.write('\n')
 
-    #Set up a camera server
-    camserv = CameraServer.getInstance()
-    camserv.enableLogging
+    #Create ball camera stream
+    ballCamSettings = {}
+    ballCamSettings['Width'] = cameraValues['BallCamWidth']
+    ballCamSettings['Height'] = cameraValues['BallCamHeight']
+    ballCamSettings['Brightness'] = cameraValues['BallCamBrightness']
+    ballCamSettings['Exposure'] = cameraValues['BallCamExposure']
+    ballCamSettings['FPS'] = cameraValues['BallCamFPS']
+    ballCamera = FRCWebCam(0, "BallCam", ballCamSettings)
+    ballCamera.start_camera()
 
-    #Start capturing webcam videos
-##    try:
-##        #startAutomaticCapture is enough to stream a non-annotated video
-##        driverCameraPath = '/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.5:1.0-video-index0'
-##        driverCamera = camserv.startAutomaticCapture(name = "DriverCamera", path=driverCameraPath)
-##        driverCamera.setVideoMode(cs.VideoMode.PixelFormat.kMJPEG, imgWidthDriver, imgHeightDriver, driverFramesPerSecond)
-##        driverCamera.setBrightness(driverCameraBrightness)
-##        driverCameraConnected = True
-##        log_file.write('Connected to driver camera on Path = %s.\n' % driverCameraPath)
-##    except:
-##        log_file.write('Error:  Unable to connect to driver camera.\n')
-##        log_file.write('Error message: ', sys.exec_info()[0])
-##        log_file.write('\n')
+    #Create goal camera stream
+    goalCamSettings = {}
+    goalCamSettings['Width'] = cameraValues['GoalCamWidth']
+    goalCamSettings['Height'] = cameraValues['GoalCamHeight']
+    goalCamSettings['Brightness'] = cameraValues['GoalCamBrightness']
+    goalCamSettings['Exposure'] = cameraValues['GoalCamExposure']
+    goalCamSettings['FPS'] = cameraValues['GoalCamFPS']
+    goalCamera = FRCWebCam(1, "GoalCam", goalCamSettings)
+    goalCamera.start_camera()
 
-    try:
-        visionCameraPath = '/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.4:1.0-video-index0'
-        visionCamera = camserv.startAutomaticCapture(name="VisionCamera", path=visionCameraPath)
-        visionCamera.setBrightness(visionCameraBrightness)
-        visionCamera.setResolution(imgWidthVision,imgHeightVision)
-        visionCamera.setFPS(visionFramesPerSecond)
-        visionCamera.setExposureManual(visionCameraExposure)
-        visionCameraConnected = True
-        log_file.write('Connected to vision camera on Path = %s.\n' % visionCameraPath)
-    except:
-        log_file.write('Error:  Unable to connect to vision camera.\n')
-        log_file.write('Error message: ', sys.exc_info()[0])
-        log_file.write('\n')        
-
-    #Define vision video sink
-    if visionCameraConnected == True:
-        visionSink = camserv.getVideo(name="VisionCamera")
-  
-    #Define output stream for processed vision images
-    if (visionCameraConnected == True):
-        visionOutputStream = camserv.putVideo("VisionStream", imgWidthVision, imgHeightVision)
-
-    #Set video codec and create VideoWriter
-    fourcc = cv.VideoWriter_fourcc(*'XVID')
-    videoFilename = '/data/Match_Videos/RobotVisionCam-' + timeString + '.avi'
-    visionImageOut = cv.VideoWriter(videoFilename,fourcc,visionFramesPerSecond,(imgWidthVision,imgHeightVision))
+    #Create vision processing
+    visionProcessor = VisionLibrary(visionFile)
 
     #Create blank vision image
-    imgVision= np.zeros(shape=(imgWidthVision, imgHeightVision, 3), dtype=np.uint8)
+    imgBallRaw = np.zeros(shape=(int(cameraValues['BallCamWidth']), int(cameraValues['BallCamHeight']), 3), dtype=np.uint8)
+    imgGoalRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
 
     #Start main processing loop
     while (True):
@@ -215,6 +194,12 @@ def main():
         #img = cv.imread('RetroreflectiveTapeImages2019/CargoStraightDark90in.jpg')
         #if img is None:
         #    break
+
+        #Read frames from cameras
+        imgBallRaw = ballCamera.read_frame()
+        imgGoalRaw = goalCamera.read_frame()
+
+        
 
         #Initialize video time stamp
         visionVideoTimestamp = 0

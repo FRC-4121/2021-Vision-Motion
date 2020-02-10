@@ -34,11 +34,11 @@ class FRCWebCam:
 
         #Set up web camera
         self.camStream = cv.VideoCapture(src)
-        self.camStream.set(cv.CAP_PROP_FRAME_WIDTH, settings['Width'])
-        self.camStream.set(cv.CAP_PROP_FRAME_HEIGHT, settings['Height'])
-        self.camStream.set(cv.CAP_PROP_BRIGHTNESS, settings['Brightness'])
-        self.camStream.set(cv.CAP_PROP_EXPOSURE, settings['Exposure'])
-        self.camStream.set(cv.CAP_PROP_FPS, settings['FPS'])
+        self.camStream.set(cv.CAP_PROP_FRAME_WIDTH, int(settings['Width']))
+        self.camStream.set(cv.CAP_PROP_FRAME_HEIGHT, int(settings['Height']))
+        self.camStream.set(cv.CAP_PROP_BRIGHTNESS, int(settings['Brightness']))
+        self.camStream.set(cv.CAP_PROP_EXPOSURE, int(settings['Exposure']))
+        self.camStream.set(cv.CAP_PROP_FPS, int(settings['FPS']))
 
         #Grab an initial frame
         (self.grabbed, self.frame) = self.camStream.read()
