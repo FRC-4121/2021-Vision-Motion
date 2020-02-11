@@ -43,12 +43,13 @@ import sys
 import imp
 
 #Setup paths
-#sys.path.append('/home/pi/.local/lib/python3.5/site-packages')
-#sys.path.append('/home/pi/Team4121/Libraries')
-#sys.path.append('/usr/local/lib/vmxpi/')
-sys.path.append('C:\\Users\\timfu\\Documents\\Team4121\\Libraries')
+sys.path.append('/home/pi/.local/lib/python3.5/site-packages')
+sys.path.append('/home/pi/Team4121/Libraries')
+sys.path.append('/usr/local/lib/vmxpi/')
+#sys.path.append('C:\\Users\\timfu\\Documents\\Team4121\\Libraries')
 
 #Module imports
+import cv2 as cv
 import numpy as np
 import datetime
 import time
@@ -200,128 +201,36 @@ def main():
         imgGoalRaw = goalCamera.read_frame()
 
         
+        #Call detection methods
+        ballX, ballY, ballRadius, ballDistance, ballAngle, ballOffset, ballScreenPercent, foundBall = visionProcessor.detect_game_balls(imgBallRaw, int(cameraValues['BallCamWidth']),
+                                                                                                                                                    int(cameraValues['BallCamHeight']),
+                                                                                                                                                    float(cameraValues['BallCamFOV']))
+        tapeX, tapeY, tapeW, tapeH, tapeOffset, tapeDistance, tapeHAngle, tapeVAngle, foundTape = visionProcessor.detect_tape_rectangle(imgGoalRaw, int(cameraValues['GoalCamWidth']),
+                                                                                                                                                    int(cameraValues['GoalCamHeight']),
+                                                                                                                                                    float(cameraValues['GoalCamFOV']))
+        #visionTable.putNumber("BallX", round(ballX, 2))
 
-        #Initialize video time stamp
-        visionVideoTimestamp = 0
-        
-        #Grab frames from the vision web camera
-        if visionCameraConnected == True:
-            visionVideoTimestamp, imgVision = visionSink.grabFrame(imgVision)
+        #Draw various contours on the image
+        if foundBall == True:
+            cv.circle(imgBallRaw, (int(ballX), int(ballY)), int(ballRadius), (0, 0, 255), 2) #ball
+            cv.putText(imgBallRaw, 'Distance to Ball: %.2f' %ballDistance, (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+            cv.putText(imgBallRaw, 'Angle to Ball: %.2f' %ballAngle, (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)                
+        if foundTape == True:
+            cv.rectangle(imgGoalRaw,(tapeX,tapeY),(tapeX+tapeW,tapeY+tapeH),(0,255,0),2) #floor tape
+            cv.putText(imgGoalRaw, 'Target Width: %.2f' %tapeW, (10, 170), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
+            cv.putText(imgGoalRaw, 'Distance to Tape: %.2f' %tapeDistance, (10, 185), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
+            cv.putText(imgGoalRaw, 'Horiz. Angle to Tape: %.2f' %tapeHAngle, (10, 200), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
+            cv.putText(imgGoalRaw, 'Vert. Angle to Tape: %.2f' %tapeVAngle, (10, 215), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
 
-        #Check for frame errors
-        visionFrameGood = True
-        if (visionVideoTimestamp == 0):
-            log_file.write('Vision video error: \n')
-            log_file.write(visionSink.getError())
-            log_file.write('\n')
-            visionFrameGood = False
-            #sleep (float(visionFramesPerSecond * 2) / 1000.0)
-            continue
 
-        #Continue processing if we have no errors
-        if (visionFrameGood == True):
-
-            #Call detection methods
-            ballX, ballY, ballRadius, ballDistance, ballAngle, ballOffset, ballScreenPercent, foundBall = detect_ball_target(imgVision)
-##            #tapeX, tapeY, tapeW, tapeH, tapeOffset, tapeDistance, tapeHAngle, tapeVAngle, foundTape = detect_tape_rectangle(imgVision)
-##            #visionTargetX, visionTargetY, visionTargetW, visionTargetH, visionTargetDistance, visionTargetAngle, visionTargetOffset, foundVisionTarget = detect_vision_targets(imgVision)
-##
-##            #Update networktables and log file
-##            if networkTablesConnected == True:
-##
-##                visionTable.putNumber("RobotStop", 0)
-##                visionTable.putBoolean("WriteVideo", writeVideo)
-##
-##                visionTable.putNumber("BallX", round(ballX, 2))
-##                visionTable.putNumber("BallY", round(ballY, 2))
-##                visionTable.putNumber("BallRadius", round(ballRadius, 2))
-##                visionTable.putNumber("BallDistance", round(ballDistance, 2))
-##                visionTable.putNumber("BallAngle", round(ballAngle, 2))
-##                visionTable.putNumber("BallOffset", round(ballOffset, 2))
-##                visionTable.putNumber("BallScreenPercent", round(ballScreenPercent, 2))
-##                visionTable.putBoolean("FoundBall", foundBall)
-##                
-####                if foundBall == True:
-####                    
-####                    log_file.write('Cargo found at %s.\n' % datetime.datetime.now())
-####                    log_file.write('  Ball distance: %.2f \n' % round(ballDistance, 2))
-####                    log_file.write('  Ball angle: %.2f \n' % round(ballAngle, 2))
-####                    log_file.write('  Ball offset: %.2f \n' % round(ballOffset, 2))
-####                    log_file.write('\n')
-####
-####                if foundTape == True:
-####                    visionTable.putNumber("TapeX", round(tapeX, 2))
-####                    visionTable.putNumber("TapeY", round(tapeY, 2))
-####                    visionTable.putNumber("TapeW", round(tapeW, 2))
-####                    visionTable.putNumber("TapeH", round(tapeH, 2))
-####                    visionTable.putNumber("TapeOffset", round(tapeOffset, 2))
-####                    visionTable.putBoolean("FoundTape", foundTape)
-####                    log_file.write('Floor tape found at %s.\n' % datetime.datetime.now())
-####                    log_file.write('  Tape offset: %.2f \n' % round(tapeOffset, 2))
-####                    log_file.write('\n')
-####
-####
-####                visionTable.putNumber("VisionTargetX", round(visionTargetX, 2))
-####                visionTable.putNumber("VisionTargetY", round(visionTargetY, 2))
-####                visionTable.putNumber("VisionTargetW", round(visionTargetW, 2))
-####                visionTable.putNumber("VisionTargetH", round(visionTargetH, 2))
-####                visionTable.putNumber("VisionTargetDistance", round(visionTargetDistance, 2))
-####                visionTable.putNumber("VisionTargetAngle", round(visionTargetAngle, 2))
-####                visionTable.putNumber("VisionTargetOffset", round(visionTargetOffset, 2))
-####                visionTable.putBoolean("FoundVisionTarget", foundVisionTarget)
-####
-####                if foundVisionTarget == True:
-####                    
-####                    log_file.write('Vision target found at %s.\n' % datetime.datetime.now())
-####                    log_file.write('  Vision target distance: %.2f \n' % round(visionTargetDistance, 2))
-####                    log_file.write('  Vision target angle: %.2f \n' % round(visionTargetAngle, 2))
-####                    log_file.write('  Vision target offset: %.2f \n' % round(visionTargetOffset, 2))
-####                    log_file.write('\n')
-##
-##            #Draw various contours on the image
-            if foundBall == True:
-                cv.circle(imgVision, (int(ballX), int(ballY)), int(ballRadius), (0, 0, 255), 2) #ball
-                cv.putText(imgVision, 'Distance to Ball: %.2f' %ballDistance, (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(255, 0, 0), 2)
-                cv.putText(imgVision, 'Angle to Ball: %.2f' %ballAngle, (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(255, 0, 0), 2)                
-##            #if foundTape == True:
-##                #cv.rectangle(imgVision,(tapeX,tapeY),(tapeX+tapeW,tapeY+tapeH),(0,255,0),2) #floor tape
-##                #cv.putText(imgVision, 'Distance to Tape: %.2f' %tapeDistance, (320, 400), cv.FONT_HERSHEY_SIMPLEX, .75,(0, 0, 255), 2)
-##                #cv.putText(imgVision, 'Horiz. Angle to Tape: %.2f' %tapeHAngle, (320, 430), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-##                #cv.putText(imgVision, 'Vert. Angle to Tape: %.2f' %tapeVAngle, (320, 460), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-##            #if foundVisionTarget == True:
-##                #cv.rectangle(imgVision,(visionTargetX,visionTargetY),(visionTargetX+visionTargetW,visionTargetY+visionTargetH),(0,255,0),2) #vision targets
-##                #cv.putText(imgVision, 'Distance to Vision: %.2f' %visionTargetDistance, (10, 400), cv.FONT_HERSHEY_SIMPLEX, .75,(0, 255, 0), 2)
-##                #cv.putText(imgVision, 'Angle to Vision: %.2f' %visionTargetAngle, (10, 440), cv.FONT_HERSHEY_SIMPLEX, .75,(0, 255, 0), 2)
-##
-##            #Put timestamp on image
-##            cv.putText(imgVision, str(datetime.datetime.now()), (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5, (0, 0, 255), 2)
-##
-##        #Update navx network table
-####        if networkTablesConnected == True:
 ####            navxTable.putNumber("GyroAngle", round(vmx.getAHRS().GetAngle(), 2))
-####            navxTable.putNumber("GyroYaw", round(vmx.getAHRS().GetYaw(), 2))
-####            navxTable.putNumber("GyroPitch", round(vmx.getAHRS().GetPitch(), 2))
-####            navxTable.putNumber("YVelocity", round(vmx.getAHRS().GetVelocityY(), 4))
-####            navxTable.putNumber("XVelocity", round(vmx.getAHRS().GetVelocityX(), 4))
-####            navxTable.putNumber("YDisplacement", round(vmx.getAHRS().GetDisplacementY(), 4))
-####            navxTable.putNumber("XDisplacement", round(vmx.getAHRS().GetDisplacementX(), 4))
-####            navxTable.putNumber("YVelocity", round(vmx.getAHRS().GetVelocityY(), 4))
-####            navxTable.putNumber("XVelocity", round(vmx.getAHRS().GetVelocityX(), 4))
-####            navxTable.putNumber("YAccel", round(vmx.getAHRS().GetWorldLinearAccelY(), 4))
-####            navxTable.putNumber("XAccel", round(vmx.getAHRS().GetWorldLinearAccelX(), 4))
+
 ####
-##        #Check vision network table dashboard value
-##        sendVisionToDashboard = visionTable.getBoolean("SendVision", False)
-##
-##        #Send vision to dashboard (for testing)
-##        if (visionCameraConnected == True) and (sendVisionToDashboard == True):
-##            visionOutputStream.putFrame(imgVision)
-##            
-        #Write processed image to file
-        #visionImageOut.write(imgVision)
+
 
         #Display the vision camera stream (for testing only)
-        cv.imshow("Vision", imgVision)
+        cv.imshow("Ball", imgBallRaw)
+        cv.imshow("Goal", imgGoalRaw)
 
 ##        #Check for gyro re-zero
 ##        gyroInit = navxTable.getNumber("ZeroGyro", 0)
@@ -347,10 +256,8 @@ def main():
     #Close all open windows (for testing)
     cv.destroyAllWindows()
 
-    #Close video file
-    visionImageOut.release()
-    visionOutputStream = None
-    visionSink = None
+    ballCamera.release_cam()
+    goalCamera.release_cam()
 
     #Close the log file
     log_file.write('Run stopped on %s.' % datetime.datetime.now())

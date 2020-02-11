@@ -36,7 +36,7 @@ class FRCWebCam:
         self.camStream = cv.VideoCapture(src)
         self.camStream.set(cv.CAP_PROP_FRAME_WIDTH, int(settings['Width']))
         self.camStream.set(cv.CAP_PROP_FRAME_HEIGHT, int(settings['Height']))
-        self.camStream.set(cv.CAP_PROP_BRIGHTNESS, int(settings['Brightness']))
+        self.camStream.set(cv.CAP_PROP_BRIGHTNESS, float(settings['Brightness']))
         self.camStream.set(cv.CAP_PROP_EXPOSURE, int(settings['Exposure']))
         self.camStream.set(cv.CAP_PROP_FPS, int(settings['FPS']))
 

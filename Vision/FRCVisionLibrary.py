@@ -149,36 +149,25 @@ class VisionLibrary:
         #Find contours in the mask and clean up the return style from OpenCV
         ballContours = self.process_image_contours(imgRaw, ballHSVMin, ballHSVMax)
 
-        if len(ballContours) == 2:
-            ballContours = ballContours[0]
-        elif len(ballContours) == 3:
-            ballContours = ballContours[1]
-
         #Only proceed if at least one contour was found
         if len(ballContours) > 0:
  
-            #largestContour = max(ballContours, key=cv.contourArea)
-            for contour in ballContours:
-            
-                ((x, y), radius) = cv.minEnclosingCircle(contour)
+            largestContour = max(ballContours, key=cv.contourArea)
+            ((x, y), radius) = cv.minEnclosingCircle(largestContour)
 
-                if radius > float(VisionLibrary.ball_values['MINRADIUS']):
+            if radius > int(VisionLibrary.ball_values['MINRADIUS']):
 
-                    cv.circle(imgRaw, (int(x), int(y)), int(radius), (0, 255, 0), 2) #Draw a green circle around all balls detected
-
-                if radius > targetRadius:
-
-                    targetRadius = radius
-                    targetX = x
-                    targetY = y
-                    foundBall = True
+                targetRadius = radius
+                targetX = x
+                targetY = y
+                foundBall = True
 
             #Distance and angle offset calculations
             if targetRadius > 0:
             
                 inches_per_pixel = float(VisionLibrary.ball_values['RADIUS'])/targetRadius #set up a general conversion factor
                 distanceToBall = inches_per_pixel * (cameraWidth / (2 * math.tan(math.radians(cameraFOV))))
-                offsetInInches = inches_per_pixel * ((targetX - cameraWidth) / 2)
+                offsetInInches = inches_per_pixel * (targetX - cameraWidth / 2)
                 angleToBall = math.degrees(math.atan((offsetInInches / distanceToBall)))
                 screenPercent = math.pi * targetRadius * targetRadius / (cameraWidth * cameraHeight)
                 ballOffset = -offsetInInches
@@ -187,8 +176,6 @@ class VisionLibrary:
             
                 distanceToBall = -1
                 angleToBall = -1
-
-            cv.circle(imgRaw, (int(targetX), int(targetY)), int(targetRadius), (0, 0, 255), 2) #Draw a red circle around largest ball detected
 
         return targetX, targetY, targetRadius, distanceToBall, angleToBall, ballOffset, screenPercent, foundBall
 
@@ -211,6 +198,7 @@ class VisionLibrary:
         targetY = -1
         targetW = -1
         targetH = -1
+        aspectRatio = 0
         centerOffset = 0
         distanceToTape = 0
         horizAngleToTape = 0
@@ -229,18 +217,20 @@ class VisionLibrary:
             if cv.contourArea(largestContour) > int(VisionLibrary.tape_values['MINAREA']):
                 
                 targetX, targetY, targetW, targetH = cv.boundingRect(largestContour)
-                cv.rectangle(imgRaw,(targetX,targetY),(targetX+targetW,targetY+targetH),(0,0,255),2)  
-                foundTape = True
+                aspectRatio = targetW / targetH
+                if math.abs(aspectRatio - float(VisionLibrary.tape_values['TAPEWIDTH'])/float(VisionLibrary.tape_values['TAPEHEIGHT'])) < float(VisionLibrary.tape_values['ARTOLERANCE']):
+                    foundTape = True
 
             #calculate real world values of found tape
             if foundTape:
                 inchesPerPixel = float(VisionLibrary.tape_values['TAPEHEIGHT']) / targetH
-                distanceToTape = inchesPerPixel * (cameraWidth / (2 * math.tan(math.radians(cameraFOV))))
+                depthAngle = math.acos(targetWidth / float(VisionLibrary.tape_values['TAPEWIDTH']))
                 horizOffsetInInches = inchesPerPixel * ((targetX + targetW/2) - cameraWidth / 2)
+                distanceToTape = inchesPerPixel * ((cameraWidth / (2 * math.tan(math.radians(cameraFOV)))) + math.tan(depthAngle) * horizOffsetInInches
                 horizAngleToTape = math.degrees(math.atan((horizOffsetInInches / distanceToTape)))
                 vertOffsetInInches = inchesPerPixel * ((cameraHeight / 2) - (targetY - targetH/2))
                 vertAngleToTape = math.degrees(math.atan((vertOffsetInInches / distanceToTape)))
                 centerOffset = -horizOffsetInInches
 
-        return targetX, targetY, targetW, targetH, centerOffset, distanceToTape, horizAngleToTape, vertAngleToTape, foundTape
+        return targetX, targetY, targetW, targetH, aspectRatio, centerOffset, distanceToTape, horizAngleToTape, vertAngleToTape, foundTape
 
