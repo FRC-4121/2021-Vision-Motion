@@ -252,6 +252,8 @@ def main():
 ##        if (robotStop == 1) or (visionCameraConnected == False) or (networkTablesConnected == False):
 ##            break
 
+        #Pause before next analysis
+        time.sleep(0.066) #should give ~15 FPS
 
     #Close all open windows (for testing)
     cv.destroyAllWindows()
