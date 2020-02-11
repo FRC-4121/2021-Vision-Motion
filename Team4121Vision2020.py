@@ -63,6 +63,7 @@ from time import sleep
 #Team 4121 module imports
 from FRCVisionLibrary import VisionLibrary
 from FRCCameraLibrary import FRCWebCam
+from FRCNavxLibrary import FRCNavx
 
 #Set up basic logging
 logging.basicConfig(level=logging.DEBUG)
@@ -137,6 +138,10 @@ def main():
     foundTape = False
     foundVisionTarget = False
 
+    #Create Navx object
+    navx = FRCNavx('NavxStream')
+    navx.start_navx()
+
     #Get current time as a string
     currentTime = time.localtime(time.time())
     timeString = str(currentTime.tm_year) + str(currentTime.tm_mon) + str(currentTime.tm_mday) + str(currentTime.tm_hour) + str(currentTime.tm_min)
@@ -154,6 +159,7 @@ def main():
     try:
         NetworkTables.initialize(server='10.41.21.2')
         visionTable = NetworkTables.getTable("vision")
+        navxTable = NetworkTables.getTable("navx")
         networkTablesConnected = True
         log_file.write('Connected to Networktables on 10.41.21.2 \n')
     except:
@@ -187,6 +193,7 @@ def main():
     #Create blank vision image
     imgBallRaw = np.zeros(shape=(int(cameraValues['BallCamWidth']), int(cameraValues['BallCamHeight']), 3), dtype=np.uint8)
     imgGoalRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
+    imgBlankRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
 
     #Start main processing loop
     while (True):
@@ -222,11 +229,12 @@ def main():
             cv.putText(imgGoalRaw, 'Horiz. Angle to Tape: %.2f' %tapeHAngle, (10, 200), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
             cv.putText(imgGoalRaw, 'Vert. Angle to Tape: %.2f' %tapeVAngle, (10, 215), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
 
+        #Read Navx values
+        botAngle = navx.read_angle()
+        cv.putText(imgBlankRaw, 'Bot Angle: %.2f' %botAngle, (10, 215), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
 
-####            navxTable.putNumber("GyroAngle", round(vmx.getAHRS().GetAngle(), 2))
-
-####
-
+        #Put values in NetworkTables
+        #navxTable.putNumber("GyroAngle", round(vmx.getAHRS().GetAngle(), 2))
 
         #Display the vision camera stream (for testing only)
         cv.imshow("Ball", imgBallRaw)
@@ -258,13 +266,17 @@ def main():
     #Close all open windows (for testing)
     cv.destroyAllWindows()
 
+    #Release camera resources
     ballCamera.release_cam()
     goalCamera.release_cam()
 
+    #Get time then release Navx resource
+    navx.stop_navx()
+    
     #Close the log file
     log_file.write('Run stopped on %s.' % datetime.datetime.now())
     log_file.close()
-    
+
 
 #define main function
 if __name__ == '__main__':

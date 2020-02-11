@@ -36,7 +36,7 @@ from threading import Thread
 class FRCNavx:
 
     #Define initialization
-    def __init__(self):
+    def __init__(self, name):
 
         #Load VMX module
         self.vmxpi = imp.load_source('vmxpi_hal_python', '/usr/local/lib/vmxpi/vmxpi_hal_python.py')
@@ -64,7 +64,7 @@ class FRCNavx:
             self.log_file.close()
 
         #Set name of Navx thread
-        self.name = 'NavxStream'
+        self.name = name
 
         #Initialize stop flag
         if self.vmxOpen is True:
@@ -180,3 +180,9 @@ class FRCNavx:
     def reset_displacement(self):
 
         self.vmx.ResetDisplacement()
+
+
+    #Define current time method
+    def get_time(self):
+
+        return
