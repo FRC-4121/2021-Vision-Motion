@@ -32,7 +32,7 @@
 #                                                                                              #
 #  Revision: 4.0                                                                               #
 #                                                                                              #
-#  Revision Date: 2/2/2020                                                                    #
+#  Revision Date: 2/2/2020                                                                     #
 #                                                                                              #
 #----------------------------------------------------------------------------------------------#
 
@@ -139,8 +139,8 @@ def main():
     foundVisionTarget = False
 
     #Create Navx object
-    navx = FRCNavx('NavxStream')
-    navx.start_navx()
+    #navx = FRCNavx('NavxStream')
+    #navx.start_navx()
 
     #Get current time as a string
     currentTime = time.localtime(time.time())
@@ -156,16 +156,16 @@ def main():
     read_settings_file()
 
     #Connect NetworkTables
-    try:
-        NetworkTables.initialize(server='10.41.21.2')
-        visionTable = NetworkTables.getTable("vision")
-        navxTable = NetworkTables.getTable("navx")
-        networkTablesConnected = True
-        log_file.write('Connected to Networktables on 10.41.21.2 \n')
-    except:
-        log_file.write('Error:  Unable to connect to Network tables.\n')
-        log_file.write('Error message: ', sys.exc_info()[0])
-        log_file.write('\n')
+##    try:
+##        NetworkTables.initialize(server='10.41.21.2')
+##        visionTable = NetworkTables.getTable("vision")
+##        navxTable = NetworkTables.getTable("navx")
+##        networkTablesConnected = True
+##        log_file.write('Connected to Networktables on 10.41.21.2 \n')
+##    except:
+##        log_file.write('Error:  Unable to connect to Network tables.\n')
+##        log_file.write('Error message: ', sys.exc_info()[0])
+##        log_file.write('\n')
 
     #Create ball camera stream
     ballCamSettings = {}
@@ -174,7 +174,7 @@ def main():
     ballCamSettings['Brightness'] = cameraValues['BallCamBrightness']
     ballCamSettings['Exposure'] = cameraValues['BallCamExposure']
     ballCamSettings['FPS'] = cameraValues['BallCamFPS']
-    ballCamera = FRCWebCam(0, "BallCam", ballCamSettings)
+    ballCamera = FRCWebCam('/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.5:1.0-video-index0', "BallCam", ballCamSettings)
     ballCamera.start_camera()
 
     #Create goal camera stream
@@ -184,7 +184,7 @@ def main():
     goalCamSettings['Brightness'] = cameraValues['GoalCamBrightness']
     goalCamSettings['Exposure'] = cameraValues['GoalCamExposure']
     goalCamSettings['FPS'] = cameraValues['GoalCamFPS']
-    goalCamera = FRCWebCam(1, "GoalCam", goalCamSettings)
+    goalCamera = FRCWebCam('/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.4:1.0-video-index0', "GoalCam", goalCamSettings)
     goalCamera.start_camera()
 
     #Create vision processing
@@ -193,7 +193,7 @@ def main():
     #Create blank vision image
     imgBallRaw = np.zeros(shape=(int(cameraValues['BallCamWidth']), int(cameraValues['BallCamHeight']), 3), dtype=np.uint8)
     imgGoalRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
-    imgBlankRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
+    #imgBlankRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
 
     #Start main processing loop
     while (True):
@@ -212,26 +212,28 @@ def main():
         ballX, ballY, ballRadius, ballDistance, ballAngle, ballOffset, ballScreenPercent, foundBall = visionProcessor.detect_game_balls(imgBallRaw, int(cameraValues['BallCamWidth']),
                                                                                                                                                     int(cameraValues['BallCamHeight']),
                                                                                                                                                     float(cameraValues['BallCamFOV']))
-        tapeX, tapeY, tapeW, tapeH, tapeOffset, tapeDistance, tapeHAngle, tapeVAngle, foundTape = visionProcessor.detect_tape_rectangle(imgGoalRaw, int(cameraValues['GoalCamWidth']),
+        tapeX, tapeY, tapeW, tapeH, tapeAspectRatio, tapeOffset, tapeDistance, tapeHAngle, tapeVAngle, foundTape = visionProcessor.detect_tape_rectangle(imgGoalRaw, int(cameraValues['GoalCamWidth']),
                                                                                                                                                     int(cameraValues['GoalCamHeight']),
                                                                                                                                                     float(cameraValues['GoalCamFOV']))
         #visionTable.putNumber("BallX", round(ballX, 2))
 
+
         #Draw various contours on the image
         if foundBall == True:
-            cv.circle(imgBallRaw, (int(ballX), int(ballY)), int(ballRadius), (0, 0, 255), 2) #ball
-            cv.putText(imgBallRaw, 'Distance to Ball: %.2f' %ballDistance, (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-            cv.putText(imgBallRaw, 'Angle to Ball: %.2f' %ballAngle, (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)                
-        if foundTape == True:
-            cv.rectangle(imgGoalRaw,(tapeX,tapeY),(tapeX+tapeW,tapeY+tapeH),(0,255,0),2) #floor tape
-            cv.putText(imgGoalRaw, 'Target Width: %.2f' %tapeW, (10, 170), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
-            cv.putText(imgGoalRaw, 'Distance to Tape: %.2f' %tapeDistance, (10, 185), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
-            cv.putText(imgGoalRaw, 'Horiz. Angle to Tape: %.2f' %tapeHAngle, (10, 200), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
-            cv.putText(imgGoalRaw, 'Vert. Angle to Tape: %.2f' %tapeVAngle, (10, 215), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
+            imgBallNew = imgBallRaw
+            cv.circle(imgBallNew, (int(ballX), int(ballY)), int(ballRadius), (0, 0, 255), 2) #ball
+            cv.putText(imgBallNew, 'Distance to Ball: %.2f' %ballDistance, (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+            cv.putText(imgBallNew, 'Angle to Ball: %.2f' %ballAngle, (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
 
-        #Read Navx values
-        botAngle = navx.read_angle()
-        cv.putText(imgBlankRaw, 'Bot Angle: %.2f' %botAngle, (10, 215), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
+        if foundTape == True:
+            imgGoalNew = imgGoalRaw
+            cv.rectangle(imgGoalNew,(tapeX,tapeY),(tapeX+tapeW,tapeY+tapeH),(0,255,0),2) #vision tape
+            cv.putText(imgGoalNew, 'Target Height: %.2f' %tapeH, (10, 200), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
+            cv.putText(imgGoalNew, 'Target Width: %.2f' %tapeW, (10, 215), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
+            #cv.putText(imgGoalNew, 'Distance to Tape: %.2f' %tapeDistance, (10, 185), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
+            #cv.putText(imgGoalNew, 'Horiz. Angle to Tape: %.2f' %tapeHAngle, (10, 200), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
+            #cv.putText(imgGoalNew, 'Vert. Angle to Tape: %.2f' %tapeVAngle, (10, 215), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
+
 
         #Put values in NetworkTables
         #navxTable.putNumber("GyroAngle", round(vmx.getAHRS().GetAngle(), 2))
@@ -271,7 +273,7 @@ def main():
     goalCamera.release_cam()
 
     #Get time then release Navx resource
-    navx.stop_navx()
+    #navx.stop_navx()
     
     #Close the log file
     log_file.write('Run stopped on %s.' % datetime.datetime.now())

@@ -27,6 +27,7 @@ import imp
 sys.path.append('/usr/local/lib/vmxpi/')
 
 #Module imports
+import math
 import time
 import datetime
 import logging
@@ -76,17 +77,11 @@ class FRCNavx:
         self.angle = 0.0
         self.yaw = 0.0
         self.pitch = 0.0
-        self.x_velocity = 0.0
-        self.y_velocity = 0.0
-        self.x_displacement = 0.0
-        self.y_displacement = 0.0
-
+        
         #Reset Navx
         if self.vmxOpen is True:
             self.vmx.getAHRS().Reset()
             self.vmx.getAHRS().ZeroYaw()
-            self.vmx.getAHRS().ResetDisplacement()
-
         
 
     #Define Navx thread start method
@@ -119,12 +114,10 @@ class FRCNavx:
 
             #If not stopped, read Navx values
             self.angle = round(self.vmx.getAHRS().GetAngle(), 2)
-            self.yaw = round(self.vmx.getAHRS().GetYaw(), 2)
-            self.pitch = round(self.vmx.getAHRS().GetPitch, 2)
-            self.x_velocity = round(self.vmx.getAHRS().GetVelocityX(), 4)
-            self.y_velocity = round(self.vmx.getAHRS().GetVelocityY(), 4)
-            self.x_displacement = round(self.vmx.getAHRS().GetDisplacementX(), 4)
-            self.y_displacement = round(self.vmx.getAHRS().GetDisplacementY(), 4)
+            #self.yaw = round(self.vmx.getAHRS().GetYaw(), 2)
+            #self.pitch = round(self.vmx.getAHRS().GetPitch(), 2)
+
+            time.sleep(.5)
     
 
     #Define read angle method
@@ -145,41 +138,11 @@ class FRCNavx:
         return self.pitch
 
 
-    #Define read X velocity method
-    def read_x_velocity(self):
-
-        return self.x_velocity
-
-
-    #Define read Y velocity method
-    def read_y_velocity(self):
-
-        return self.y_velocity
-
-
-    #Define read X displacement method
-    def read_x_displacement(self):
-
-        return self.x_displacement
-
-
-    #Define read Y displacement method
-    def read_y_displacement(self):
-
-        return self.y_displacement
-
-
     #Define reset gyro method
     def reset_gyro(self):
 
         self.vmx.Reset()
         self.vmx.ZeroYaw()
-
-
-    #Define reset displacement method
-    def reset_displacement(self):
-
-        self.vmx.ResetDisplacement()
 
 
     #Define current time method

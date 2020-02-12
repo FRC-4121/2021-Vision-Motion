@@ -217,20 +217,25 @@ class VisionLibrary:
             if cv.contourArea(largestContour) > int(VisionLibrary.tape_values['MINAREA']):
                 
                 targetX, targetY, targetW, targetH = cv.boundingRect(largestContour)
-                aspectRatio = targetW / targetH
-                if math.abs(aspectRatio - float(VisionLibrary.tape_values['TAPEWIDTH'])/float(VisionLibrary.tape_values['TAPEHEIGHT'])) < float(VisionLibrary.tape_values['ARTOLERANCE']):
-                    foundTape = True
+##                aspectRatio = targetW / targetH
+##                if abs(aspectRatio - float(VisionLibrary.tape_values['TAPEWIDTH'])/float(VisionLibrary.tape_values['TAPEHEIGHT'])) < float(VisionLibrary.tape_values['ARTOLERANCE']):
+##                    foundTape = True
+                foundTape = True
 
             #calculate real world values of found tape
             if foundTape:
                 inchesPerPixel = float(VisionLibrary.tape_values['TAPEHEIGHT']) / targetH
-                depthAngle = math.acos(targetWidth / float(VisionLibrary.tape_values['TAPEWIDTH']))
+
+                if (targetW * inchesPerPixel) > float(VisionLibrary.tape_values['TAPEWIDTH']):
+                    targetW = float(VisionLibrary.tape_values['TAPEWIDTH']) / inchesPerPixel
+                    
+                depthAngle = math.acos(targetW * inchesPerPixel / float(VisionLibrary.tape_values['TAPEWIDTH']))
                 horizOffsetInInches = inchesPerPixel * ((targetX + targetW/2) - cameraWidth / 2)
-                distanceToTape = inchesPerPixel * ((cameraWidth / (2 * math.tan(math.radians(cameraFOV)))) + math.tan(depthAngle) * horizOffsetInInches
+                distanceToTape = inchesPerPixel * (cameraWidth / (2 * math.tan(math.radians(cameraFOV))))# + math.tan(depthAngle) * horizOffsetInInches
                 horizAngleToTape = math.degrees(math.atan((horizOffsetInInches / distanceToTape)))
                 vertOffsetInInches = inchesPerPixel * ((cameraHeight / 2) - (targetY - targetH/2))
                 vertAngleToTape = math.degrees(math.atan((vertOffsetInInches / distanceToTape)))
                 centerOffset = -horizOffsetInInches
 
-        return targetX, targetY, targetW, targetH, aspectRatio, centerOffset, distanceToTape, horizAngleToTape, vertAngleToTape, foundTape
+        return targetX, targetY, int(targetW), targetH, aspectRatio, centerOffset, distanceToTape, horizAngleToTape, vertAngleToTape, foundTape
 
