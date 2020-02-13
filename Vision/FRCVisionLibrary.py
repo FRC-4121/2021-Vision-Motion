@@ -200,10 +200,24 @@ class VisionLibrary:
         targetH = -1
         aspectRatio = 0
         centerOffset = 0
+        cameraAngle = 0
+        botAngle = 0
         distanceToTape = 0
         horizAngleToTape = 0
         vertAngleToTape = 0
+        #robotLeft = 
         foundTape = False
+        inchesPerPixel = 0
+        distanceTerm1 = 0
+        distanceTerm2 = 0
+        horizOffsetPixels = 0
+        rect = None
+        box = None
+
+        #Return dictionary
+        tapeCameraValues = {}
+        tapeRealWorldValues = {}
+        
     
         #Find alignment tape in image
         tapeContours = self.process_image_contours(imgRaw, tapeHSVMin, tapeHSVMax)
@@ -216,26 +230,78 @@ class VisionLibrary:
                         
             if cv.contourArea(largestContour) > int(VisionLibrary.tape_values['MINAREA']):
                 
+                #Find horizontal rectangle
                 targetX, targetY, targetW, targetH = cv.boundingRect(largestContour)
+
+                #Find angled rectangle
+                rect = cv.minAreaRect(largestContour)
+                box = cv.boxPoints(rect)
+                box = np.int0(box)
+
+                #Find angle of bot to target
+                angle = rect[2]
+                if abs(angle) < 45:
+                    cameraAngle = abs(angle)
+                    #robotLeft = False
+                else:
+                    cameraAngle = 90 - abs(angle)
+
+                botAngle = 2 * cameraAngle
+
+                #Set flag
+                foundTape = True
+                
 ##                aspectRatio = targetW / targetH
 ##                if abs(aspectRatio - float(VisionLibrary.tape_values['TAPEWIDTH'])/float(VisionLibrary.tape_values['TAPEHEIGHT'])) < float(VisionLibrary.tape_values['ARTOLERANCE']):
 ##                    foundTape = True
-                foundTape = True
 
             #calculate real world values of found tape
             if foundTape:
-                inchesPerPixel = float(VisionLibrary.tape_values['TAPEHEIGHT']) / targetH
+                
+                inchesPerPixel = float(VisionLibrary.tape_values['TAPEWIDTH']) / targetW
 
-                if (targetW * inchesPerPixel) > float(VisionLibrary.tape_values['TAPEWIDTH']):
-                    targetW = float(VisionLibrary.tape_values['TAPEWIDTH']) / inchesPerPixel
-                    
-                depthAngle = math.acos(targetW * inchesPerPixel / float(VisionLibrary.tape_values['TAPEWIDTH']))
-                horizOffsetInInches = inchesPerPixel * ((targetX + targetW/2) - cameraWidth / 2)
-                distanceToTape = inchesPerPixel * (cameraWidth / (2 * math.tan(math.radians(cameraFOV))))# + math.tan(depthAngle) * horizOffsetInInches
+##                if (targetW * inchesPerPixel) > float(VisionLibrary.tape_values['TAPEWIDTH']):
+##                    targetW = float(VisionLibrary.tape_values['TAPEWIDTH']) / inchesPerPixel
+##                    
+                #depthAngle = math.acos(targetW * inchesPerPixel / float(VisionLibrary.tape_values['TAPEWIDTH']))
+                horizOffsetPixels = (targetX + targetW/2) - cameraWidth / 2
+                horizOffsetInInches = inchesPerPixel * horizOffsetPixels
+
+                constantTerm = (2 * math.tan(math.degrees(cameraFOV)))
+                print("cameraWidth: " + str(cameraWidth))
+                print("cameraFOV: " + str(cameraFOV))
+                print("demonimator: " + str(constantTerm))
+                distanceTerm1Part1 = math.pow(cameraWidth/(2 * math.tan(math.radians(cameraFOV))), 2)
+                print("Part 1: " + str(distanceTerm1Part1))
+                distanceTerm1Part2 = math.pow(horizOffsetPixels, 2)
+                print("Part 2: " + str(distanceTerm1Part2))
+
+                distanceTerm1 = math.sqrt(math.pow(cameraWidth/(2 * math.tan(math.radians(cameraFOV))), 2) + math.pow(horizOffsetPixels, 2))
+                distanceTerm2 = math.tan(math.radians(botAngle)) * ((cameraWidth / 2) - horizOffsetPixels)
+                distanceToTape = inchesPerPixel * (distanceTerm1 + distanceTerm2)
+                #distanceToTape = inchesPerPixel * (cameraWidth / (2 * math.tan(math.radians(cameraFOV))))
+                
                 horizAngleToTape = math.degrees(math.atan((horizOffsetInInches / distanceToTape)))
                 vertOffsetInInches = inchesPerPixel * ((cameraHeight / 2) - (targetY - targetH/2))
                 vertAngleToTape = math.degrees(math.atan((vertOffsetInInches / distanceToTape)))
                 centerOffset = -horizOffsetInInches
 
-        return targetX, targetY, int(targetW), targetH, aspectRatio, centerOffset, distanceToTape, horizAngleToTape, vertAngleToTape, foundTape
+        #Fill dictionary
+        tapeCameraValues['TargetX'] = targetX
+        tapeCameraValues['TargetY'] = targetY
+        tapeCameraValues['TargetW'] = targetW
+        tapeCameraValues['TargetH'] = targetH
+        tapeCameraValues['IPP'] = inchesPerPixel
+        tapeCameraValues['Term1'] = distanceTerm1
+        tapeCameraValues['Term2'] = distanceTerm2
+        tapeCameraValues['Offset'] = horizOffsetPixels
+        tapeRealWorldValues['AspectRatio'] = aspectRatio
+        tapeRealWorldValues['CenterOffset'] = centerOffset
+        tapeRealWorldValues['Distance'] = distanceToTape
+        tapeRealWorldValues['HAngle'] = horizAngleToTape
+        tapeRealWorldValues['VAngle'] = vertAngleToTape
+        tapeRealWorldValues['TargetRotation'] = cameraAngle
+        tapeRealWorldValues['BotAngle'] = botAngle
+
+        return tapeCameraValues, tapeRealWorldValues, foundTape, rect, box
 

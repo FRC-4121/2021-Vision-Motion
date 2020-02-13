@@ -193,7 +193,7 @@ def main():
     #Create blank vision image
     imgBallRaw = np.zeros(shape=(int(cameraValues['BallCamWidth']), int(cameraValues['BallCamHeight']), 3), dtype=np.uint8)
     imgGoalRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
-    #imgBlankRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
+    imgBlankRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
 
     #Start main processing loop
     while (True):
@@ -206,13 +206,14 @@ def main():
         #Read frames from cameras
         imgBallRaw = ballCamera.read_frame()
         imgGoalRaw = goalCamera.read_frame()
+        imgBlankRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
 
         
         #Call detection methods
         ballX, ballY, ballRadius, ballDistance, ballAngle, ballOffset, ballScreenPercent, foundBall = visionProcessor.detect_game_balls(imgBallRaw, int(cameraValues['BallCamWidth']),
                                                                                                                                                     int(cameraValues['BallCamHeight']),
                                                                                                                                                     float(cameraValues['BallCamFOV']))
-        tapeX, tapeY, tapeW, tapeH, tapeAspectRatio, tapeOffset, tapeDistance, tapeHAngle, tapeVAngle, foundTape = visionProcessor.detect_tape_rectangle(imgGoalRaw, int(cameraValues['GoalCamWidth']),
+        tapeCameraValues, tapeRealWorldValues, foundTape, rect, box = visionProcessor.detect_tape_rectangle(imgGoalRaw, int(cameraValues['GoalCamWidth']),
                                                                                                                                                     int(cameraValues['GoalCamHeight']),
                                                                                                                                                     float(cameraValues['GoalCamFOV']))
         #visionTable.putNumber("BallX", round(ballX, 2))
@@ -227,11 +228,20 @@ def main():
 
         if foundTape == True:
             imgGoalNew = imgGoalRaw
-            cv.rectangle(imgGoalNew,(tapeX,tapeY),(tapeX+tapeW,tapeY+tapeH),(0,255,0),2) #vision tape
-            cv.putText(imgGoalNew, 'Target Height: %.2f' %tapeH, (10, 200), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
-            cv.putText(imgGoalNew, 'Target Width: %.2f' %tapeW, (10, 215), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
-            #cv.putText(imgGoalNew, 'Distance to Tape: %.2f' %tapeDistance, (10, 185), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
-            #cv.putText(imgGoalNew, 'Horiz. Angle to Tape: %.2f' %tapeHAngle, (10, 200), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
+            cv.rectangle(imgGoalNew,(tapeCameraValues['TargetX'],tapeCameraValues['TargetY']),(tapeCameraValues['TargetX']+tapeCameraValues['TargetW'],tapeCameraValues['TargetY']+tapeCameraValues['TargetH']),(0,255,0),2) #vision tape
+            cv.drawContours(imgGoalNew, [box], 0, (0,0,255), 2)
+
+            
+            #cv.putText(imgGoalNew, 'Target Height: %.2f' %tapeCameraValues['TargetH'], (10, 200), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
+            #cv.putText(imgGoalNew, 'Target Width: %.2f' %tapeCameraValues['TargetW'], (10, 215), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
+            cv.putText(imgBlankRaw, 'Rotated Angle: %.2f' %tapeRealWorldValues['TargetRotation'], (10, 10), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 2)
+            cv.putText(imgBlankRaw, 'Rotated Height: %.2f' %rect[1][1], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 2)
+            cv.putText(imgBlankRaw, 'Distance: %.2f' %tapeRealWorldValues['Distance'], (10, 50), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
+            cv.putText(imgBlankRaw, 'Bot Angle: %.2f' %tapeRealWorldValues['BotAngle'], (10, 70), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
+            cv.putText(imgBlankRaw, 'IPP: %.2f' %tapeCameraValues['IPP'], (10, 90), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
+            cv.putText(imgBlankRaw, 'Term 1: %.2f' %tapeCameraValues['Term1'], (10, 110), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
+            cv.putText(imgBlankRaw, 'Term 2: %.2f' %tapeCameraValues['Term2'], (10, 130), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
+            cv.putText(imgBlankRaw, 'Offset: %.2f' %tapeCameraValues['Offset'], (10, 150), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
             #cv.putText(imgGoalNew, 'Vert. Angle to Tape: %.2f' %tapeVAngle, (10, 215), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
 
 
@@ -240,7 +250,8 @@ def main():
 
         #Display the vision camera stream (for testing only)
         cv.imshow("Ball", imgBallRaw)
-        cv.imshow("Goal", imgGoalRaw)
+        cv.imshow("Goal", imgGoalNew)
+        cv.imshow("Data", imgBlankRaw)
 
 ##        #Check for gyro re-zero
 ##        gyroInit = navxTable.getNumber("ZeroGyro", 0)
