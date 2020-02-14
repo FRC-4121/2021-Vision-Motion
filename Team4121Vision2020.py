@@ -216,8 +216,10 @@ def main():
                                                                                                                                                     int(cameraValues['BallCamHeight']),
                                                                                                                                                     float(cameraValues['BallCamFOV']))
         tapeCameraValues, tapeRealWorldValues, foundTape, rect, box = visionProcessor.detect_tape_rectangle(imgGoalRaw, int(cameraValues['GoalCamWidth']),
-                                                                                                                                                    int(cameraValues['GoalCamHeight']),
-                                                                                                                                                    float(cameraValues['GoalCamFOV']))
+                                                                                                                        int(cameraValues['GoalCamHeight']),
+                                                                                                                        float(cameraValues['GoalCamFOV']),
+                                                                                                                        float(cameraValues['GoalCamFocalLength']),
+                                                                                                                        float(cameraValues['GoalCamMountAngle']))
         #visionTable.putNumber("BallX", round(ballX, 2))
 
         gyroAngle = navx.read_angle()
