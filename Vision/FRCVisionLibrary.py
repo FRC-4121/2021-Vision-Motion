@@ -123,6 +123,24 @@ class VisionLibrary:
         return contours
 
 
+    #Define basic image processing method for edge detection
+    def process_image_edges(self, imgRaw):
+
+        #Blur image to remove noise
+        blur = cv.GaussianBlur(imgRaw.copy(),(13,13),0)
+        
+        #Convert from BGR to HSV colorspace
+        hsv = cv.cvtColor(blur, cv.COLOR_BGR2HSV)
+
+        #Detect edges
+        edges = cv.Canny(hsv, 35, 125)
+
+        #Find contours using edges
+        _, contours, _ = cv.findContours(edges.copy(),cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE)
+
+        return contours
+
+
     #Find ball game pieces
     def detect_game_balls(self, imgRaw, cameraWidth, cameraHeight, cameraFOV):
 
