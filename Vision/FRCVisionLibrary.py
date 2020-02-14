@@ -182,6 +182,10 @@ class VisionLibrary:
 
     #Define general tape detection method (rectangle good for generic vision tape targets)
     def detect_tape_rectangle(self, imgRaw, cameraWidth, cameraHeight, cameraFOV):
+
+        focalLength = 334.29
+        baseTargetWidthPx = 95#from 120 inches
+        mountAngle = 29.5
     
         #Read HSV values from dictionary and make tupples
         hMin = int(VisionLibrary.tape_values['HMIN'])
@@ -234,24 +238,27 @@ class VisionLibrary:
                 targetX, targetY, targetW, targetH = cv.boundingRect(largestContour)
 
                 #Find angled rectangle
-                rect = cv.minAreaRect(largestContour)
+                rect = cv.minAreaRect(largestContour)#((x, y), (h, w), angle)
                 box = cv.boxPoints(rect)
                 box = np.int0(box)
 
                 #Find angle of bot to target
                 angle = rect[2]
+                print(str(angle))
                 if abs(angle) < 45:
                     cameraAngle = abs(angle)
+                    #targetW = int(rect[1][0])
                     #robotLeft = False
                 else:
                     cameraAngle = 90 - abs(angle)
+                    #targetW = int(rect[1][1])
 
                 botAngle = 2 * cameraAngle
 
                 #Set flag
                 foundTape = True
                 
-##                aspectRatio = targetW / targetH
+                aspectRatio = targetW / targetH
 ##                if abs(aspectRatio - float(VisionLibrary.tape_values['TAPEWIDTH'])/float(VisionLibrary.tape_values['TAPEHEIGHT'])) < float(VisionLibrary.tape_values['ARTOLERANCE']):
 ##                    foundTape = True
 
@@ -267,19 +274,25 @@ class VisionLibrary:
                 horizOffsetPixels = (targetX + targetW/2) - cameraWidth / 2
                 horizOffsetInInches = inchesPerPixel * horizOffsetPixels
 
-                constantTerm = (2 * math.tan(math.degrees(cameraFOV)))
-                print("cameraWidth: " + str(cameraWidth))
-                print("cameraFOV: " + str(cameraFOV))
-                print("demonimator: " + str(constantTerm))
-                distanceTerm1Part1 = math.pow(cameraWidth/(2 * math.tan(math.radians(cameraFOV))), 2)
-                print("Part 1: " + str(distanceTerm1Part1))
-                distanceTerm1Part2 = math.pow(horizOffsetPixels, 2)
-                print("Part 2: " + str(distanceTerm1Part2))
-
-                distanceTerm1 = math.sqrt(math.pow(cameraWidth/(2 * math.tan(math.radians(cameraFOV))), 2) + math.pow(horizOffsetPixels, 2))
-                distanceTerm2 = math.tan(math.radians(botAngle)) * ((cameraWidth / 2) - horizOffsetPixels)
-                distanceToTape = inchesPerPixel * (distanceTerm1 + distanceTerm2)
+##                constantTerm = (2 * math.tan(math.degrees(cameraFOV)))
+##                print("cameraWidth: " + str(cameraWidth))
+##                print("cameraFOV: " + str(cameraFOV))
+##                print("demonimator: " + str(constantTerm))
+##                distanceTerm1Part1 = math.pow(cameraWidth/(2 * math.tan(math.radians(cameraFOV))), 2)
+##                print("Part 1: " + str(distanceTerm1Part1))
+##                distanceTerm1Part2 = math.pow(horizOffsetPixels, 2)
+##                print("Part 2: " + str(distanceTerm1Part2))
+##
+##                distanceTerm1 = math.sqrt(math.pow(cameraWidth/(2 * math.tan(math.radians(cameraFOV))), 2) + math.pow(horizOffsetPixels, 2))
+##                distanceTerm2 = math.tan(math.radians(botAngle)) * ((cameraWidth / 2) - horizOffsetPixels)
+                #distanceToTape = inchesPerPixel * (distanceTerm1 + distanceTerm2)
                 #distanceToTape = inchesPerPixel * (cameraWidth / (2 * math.tan(math.radians(cameraFOV))))
+                
+                straightLineDistance = float(VisionLibrary.tape_values['TAPEWIDTH']) * focalLength / targetW
+                print(str(straightLineDistance))
+                #depthStraightDistance = straightLineDistance * targetW / baseTargetWidthPx
+                groundStraightDistance = straightLineDistance * math.cos(math.radians(mountAngle))
+                distanceToTape = groundStraightDistance / math.cos(math.radians(botAngle))                
                 
                 horizAngleToTape = math.degrees(math.atan((horizOffsetInInches / distanceToTape)))
                 vertOffsetInInches = inchesPerPixel * ((cameraHeight / 2) - (targetY - targetH/2))

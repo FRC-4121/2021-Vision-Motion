@@ -139,8 +139,8 @@ def main():
     foundVisionTarget = False
 
     #Create Navx object
-    #navx = FRCNavx('NavxStream')
-    #navx.start_navx()
+    navx = FRCNavx('NavxStream')
+    navx.start_navx()
 
     #Get current time as a string
     currentTime = time.localtime(time.time())
@@ -195,6 +195,8 @@ def main():
     imgGoalRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
     imgBlankRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
 
+    gyroAngle = 0
+    
     #Start main processing loop
     while (True):
 
@@ -218,6 +220,8 @@ def main():
                                                                                                                                                     float(cameraValues['GoalCamFOV']))
         #visionTable.putNumber("BallX", round(ballX, 2))
 
+        gyroAngle = navx.read_angle()
+        cv.putText(imgBlankRaw, 'Gyro: %.2f' %gyroAngle, (10, 190), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
 
         #Draw various contours on the image
         if foundBall == True:
@@ -225,23 +229,22 @@ def main():
             cv.circle(imgBallNew, (int(ballX), int(ballY)), int(ballRadius), (0, 0, 255), 2) #ball
             cv.putText(imgBallNew, 'Distance to Ball: %.2f' %ballDistance, (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
             cv.putText(imgBallNew, 'Angle to Ball: %.2f' %ballAngle, (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+            cv.putText(imgBallNew, 'Radius: %.2f' %ballRadius, (10, 45), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
 
         if foundTape == True:
             imgGoalNew = imgGoalRaw
             cv.rectangle(imgGoalNew,(tapeCameraValues['TargetX'],tapeCameraValues['TargetY']),(tapeCameraValues['TargetX']+tapeCameraValues['TargetW'],tapeCameraValues['TargetY']+tapeCameraValues['TargetH']),(0,255,0),2) #vision tape
             cv.drawContours(imgGoalNew, [box], 0, (0,0,255), 2)
-
             
             #cv.putText(imgGoalNew, 'Target Height: %.2f' %tapeCameraValues['TargetH'], (10, 200), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
-            #cv.putText(imgGoalNew, 'Target Width: %.2f' %tapeCameraValues['TargetW'], (10, 215), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
-            cv.putText(imgBlankRaw, 'Rotated Angle: %.2f' %tapeRealWorldValues['TargetRotation'], (10, 10), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 2)
-            cv.putText(imgBlankRaw, 'Rotated Height: %.2f' %rect[1][1], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 2)
-            cv.putText(imgBlankRaw, 'Distance: %.2f' %tapeRealWorldValues['Distance'], (10, 50), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
-            cv.putText(imgBlankRaw, 'Bot Angle: %.2f' %tapeRealWorldValues['BotAngle'], (10, 70), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
-            cv.putText(imgBlankRaw, 'IPP: %.2f' %tapeCameraValues['IPP'], (10, 90), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
-            cv.putText(imgBlankRaw, 'Term 1: %.2f' %tapeCameraValues['Term1'], (10, 110), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
-            cv.putText(imgBlankRaw, 'Term 2: %.2f' %tapeCameraValues['Term2'], (10, 130), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
-            cv.putText(imgBlankRaw, 'Offset: %.2f' %tapeCameraValues['Offset'], (10, 150), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
+            cv.putText(imgBlankRaw, 'Target Width: %.2f' %tapeCameraValues['TargetW'], (10, 170), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+            cv.putText(imgBlankRaw, 'Rotated Angle: %.2f' %tapeRealWorldValues['TargetRotation'], (10, 10), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+            cv.putText(imgBlankRaw, 'Rotated Height: %.2f' %rect[1][1], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+            cv.putText(imgBlankRaw, 'Distance: %.2f' %tapeRealWorldValues['Distance'], (10, 50), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+            cv.putText(imgBlankRaw, 'Bot Angle: %.2f' %tapeRealWorldValues['BotAngle'], (10, 70), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+            cv.putText(imgBlankRaw, 'IPP: %.2f' %tapeCameraValues['IPP'], (10, 90), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+            cv.putText(imgBlankRaw, 'Aspect Ratio: %.2f' %tapeRealWorldValues['AspectRatio'], (10, 110), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+            cv.putText(imgBlankRaw, 'Offset: %.2f' %tapeCameraValues['Offset'], (10, 150), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
             #cv.putText(imgGoalNew, 'Vert. Angle to Tape: %.2f' %tapeVAngle, (10, 215), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
 
 
