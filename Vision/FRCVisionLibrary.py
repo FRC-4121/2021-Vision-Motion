@@ -199,7 +199,7 @@ class VisionLibrary:
 
 
     #Define general tape detection method (rectangle good for generic vision tape targets)
-    def detect_tape_rectangle(self, imgRaw, cameraWidth, cameraHeight, cameraFOV, cameraFocalLength, cameraMountAngle):
+    def detect_tape_rectangle(self, imgRaw, imageWidth, imageHeight, cameraFOV, cameraFocalLength, cameraMountAngle, cameraMountHeight):
 
         #Read HSV values from dictionary and make tupples
         hMin = int(VisionLibrary.tape_values['HMIN'])
@@ -212,25 +212,35 @@ class VisionLibrary:
         tapeHSVMax = (hMax, sMax, vMax)
 
         #Initialize processing values
-        targetX = -1
-        targetY = -1
-        targetW = -1
-        targetH = -1
+        targetX = 1000
+        targetY = 1000
+        targetW = 1000
+        targetH = 1000
         aspectRatio = 0
         centerOffset = 0
         cameraAngle = 0
+        actualVertAngle = 0
         botAngle = 0
         apparentTapeWidth = 0
-        distanceToTape = 0
+        distanceArg = 0
+        straightLineDistance = 1000
+        distanceToTape = 1000
+        distanceToWall = 1000
         horizAngleToTape = 0
         vertAngleToTape = 0
         inchesPerPixel = 0
-        distanceTerm1 = 0
-        distanceTerm2 = 0
-        horizOffsetPixels = 0        
-        foundTape = False
+        horizOffsetPixels = 0
+        horizOffsetInInches = 0
+        vertOffsetPixels = 0
+        vertOffsetInInches = 0
         rect = None
         box = None
+
+        #Initialize flags
+        foundTape = False
+        targetLock = False
+
+        goalHeight = 90.0
 
         #Return dictionary
         tapeCameraValues = {}
@@ -260,7 +270,6 @@ class VisionLibrary:
 
                 #Find angle of bot to target
                 angle = rect[2]
-                print(str(angle))
                 if abs(angle) < 45:
                     cameraAngle = abs(angle)
                 else:
@@ -279,19 +288,27 @@ class VisionLibrary:
                 #Calculate inches per pixel conversion factor
                 inchesPerPixel = apparentTapeWidth / targetW
 
+                #Find tape offsets
+                horizOffsetPixels = (targetX + targetW/2) - imageWidth / 2
+                horizOffsetInInches = inchesPerPixel * horizOffsetPixels
+                vertOffsetPixels = (imageHeight / 2) - (targetY - targetH/2)
+                vertOffsetInInches = inchesPerPixel * vertOffsetPixels
+                centerOffset = -horizOffsetInInches
+                
                 #Calculate distance to tape
                 straightLineDistance = apparentTapeWidth * cameraFocalLength / targetW
-                groundStraightDistance = straightLineDistance * math.cos(math.radians(cameraMountAngle))
-                distanceToTape = groundStraightDistance / math.cos(math.radians(botAngle))                
-                #print(str(straightLineDistance))
+                distanceArg = math.pow(straightLineDistance, 2) - math.pow((float(VisionLibrary.tape_values['GOALHEIGHT']) - cameraMountHeight),2)
+                if (distanceArg > 0):
+                    distanceToTape = math.sqrt(distanceArg)
+                distanceToWall = distanceToTape / math.cos(math.radians(botAngle))                
 
                 #Find tape offsets
-                horizOffsetPixels = (targetX + targetW/2) - cameraWidth / 2
-                horizOffsetInInches = inchesPerPixel * horizOffsetPixels                
                 horizAngleToTape = math.degrees(math.atan((horizOffsetInInches / distanceToTape)))
-                vertOffsetInInches = inchesPerPixel * ((cameraHeight / 2) - (targetY - targetH/2))
                 vertAngleToTape = math.degrees(math.atan((vertOffsetInInches / distanceToTape)))
-                centerOffset = -horizOffsetInInches
+
+                #Determine if we have target lock
+                if abs(horizOffsetInInches) <= float(VisionLibrary.tape_values['LOCKTOLERANCE']):
+                    targetLock = True
 
         #Fill return dictionary
         tapeCameraValues['TargetX'] = targetX
@@ -299,16 +316,18 @@ class VisionLibrary:
         tapeCameraValues['TargetW'] = targetW
         tapeCameraValues['TargetH'] = targetH
         tapeCameraValues['IPP'] = inchesPerPixel
-        tapeCameraValues['Term1'] = distanceTerm1
-        tapeCameraValues['Term2'] = distanceTerm2
         tapeCameraValues['Offset'] = horizOffsetPixels
         tapeRealWorldValues['AspectRatio'] = aspectRatio
         tapeRealWorldValues['CenterOffset'] = centerOffset
-        tapeRealWorldValues['Distance'] = distanceToTape
+        tapeRealWorldValues['StraightDistance'] = straightLineDistance
+        tapeRealWorldValues['TapeDistance'] = distanceToTape
+        tapeRealWorldValues['WallDistance'] = distanceToWall
         tapeRealWorldValues['HAngle'] = horizAngleToTape
         tapeRealWorldValues['VAngle'] = vertAngleToTape
         tapeRealWorldValues['TargetRotation'] = cameraAngle
         tapeRealWorldValues['BotAngle'] = botAngle
+        tapeRealWorldValues['ApparentWidth'] = apparentTapeWidth
+        tapeRealWorldValues['VertOffset'] = vertOffsetInInches
 
-        return tapeCameraValues, tapeRealWorldValues, foundTape, rect, box
+        return tapeCameraValues, tapeRealWorldValues, foundTape, targetLock, rect, box
 

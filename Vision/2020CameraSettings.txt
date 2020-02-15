@@ -7,6 +7,7 @@ BallCamExposure,30
 BallCamCalFactor,1
 BallCamFocalLength,334.29
 BallCamMountAngle,0
+BallCamMountHeight,0
 GoalCamFOV,23.5
 GoalCamWidth,320
 GoalCamHeight,240
@@ -14,5 +15,6 @@ GoalCamFPS,15
 GoalCamBrightness,0
 GoalCamExposure,0
 GoalCamCalFactor,1
-GoalCamFocalLength,334.29
-GoalCamMountAngle,29.5
+GoalCamFocalLength,340.00
+GoalCamMountAngle,25.0
+GoalCamMountHeight,26.0

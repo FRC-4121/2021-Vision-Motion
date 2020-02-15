@@ -108,20 +108,28 @@ def read_settings_file():
 
     except:
 
+        print('Using default camera values')
+        
         cameraValues['BallCamFOV'] = 27.3
         cameraValues['BallCamWidth'] = 320
         cameraValues['BallCamHeight'] = 240
         cameraValues['BallCamFPS'] = 15
-        cameraValues['BallCamBrightness'] = 50
-        cameraValues['BallCamExposure'] = 50
+        cameraValues['BallCamBrightness'] = 0.30
+        cameraValues['BallCamExposure'] = 30
         cameraValues['BallCamCalFactor'] = 1
-        cameraValues['GoalCamFOV'] = 27.3
+        cameraValues['BallCamfocalLength'] = 334.29
+        cameraValues['BallCamMountAngle'] = 0
+        cameraValues['BallCamMountHeight'] = 0
+        cameraValues['GoalCamFOV'] = 23.5
         cameraValues['GoalCamWidth'] = 320
         cameraValues['GoalCamHeight'] = 240
         cameraValues['GoalCamFPS'] = 15
         cameraValues['GoalCamBrightness'] = 0
         cameraValues['GoalCamExposure'] = 0
         cameraValues['GoalCamCalFactor'] = 1
+        cameraValues['GoalCamFocalLength'] = 340.0
+        cameraValues['GoalCamMountAngle'] = 25.0
+        cameraValues['GoalCamMountHeight'] = 26.0
 
 
 #Define main processing function
@@ -137,6 +145,7 @@ def main():
     foundBall = False
     foundTape = False
     foundVisionTarget = False
+    tapeTargetLock = False
 
     #Create Navx object
     navx = FRCNavx('NavxStream')
@@ -210,20 +219,21 @@ def main():
         imgGoalRaw = goalCamera.read_frame()
         imgBlankRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
 
+        #Read gyro angle
+        gyroAngle = navx.read_angle()
         
         #Call detection methods
         ballX, ballY, ballRadius, ballDistance, ballAngle, ballOffset, ballScreenPercent, foundBall = visionProcessor.detect_game_balls(imgBallRaw, int(cameraValues['BallCamWidth']),
                                                                                                                                                     int(cameraValues['BallCamHeight']),
                                                                                                                                                     float(cameraValues['BallCamFOV']))
-        tapeCameraValues, tapeRealWorldValues, foundTape, rect, box = visionProcessor.detect_tape_rectangle(imgGoalRaw, int(cameraValues['GoalCamWidth']),
+        tapeCameraValues, tapeRealWorldValues, foundTape, tapeTargetLock, rect, box = visionProcessor.detect_tape_rectangle(imgGoalRaw, int(cameraValues['GoalCamWidth']),
                                                                                                                         int(cameraValues['GoalCamHeight']),
                                                                                                                         float(cameraValues['GoalCamFOV']),
                                                                                                                         float(cameraValues['GoalCamFocalLength']),
-                                                                                                                        float(cameraValues['GoalCamMountAngle']))
-        #visionTable.putNumber("BallX", round(ballX, 2))
+                                                                                                                        float(cameraValues['GoalCamMountAngle']),
+                                                                                                                        float(cameraValues['GoalCamMountHeight']))
 
-        gyroAngle = navx.read_angle()
-        cv.putText(imgBlankRaw, 'Gyro: %.2f' %gyroAngle, (10, 190), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+        cv.putText(imgBlankRaw, 'Gyro: %.2f' %gyroAngle, (10, 110), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
 
         #Draw various contours on the image
         if foundBall == True:
@@ -235,19 +245,19 @@ def main():
 
         if foundTape == True:
             imgGoalNew = imgGoalRaw
-            cv.rectangle(imgGoalNew,(tapeCameraValues['TargetX'],tapeCameraValues['TargetY']),(tapeCameraValues['TargetX']+tapeCameraValues['TargetW'],tapeCameraValues['TargetY']+tapeCameraValues['TargetH']),(0,255,0),2) #vision tape
-            cv.drawContours(imgGoalNew, [box], 0, (0,0,255), 2)
+            if tapeTargetLock:
+                cv.rectangle(imgGoalNew,(tapeCameraValues['TargetX'],tapeCameraValues['TargetY']),(tapeCameraValues['TargetX']+tapeCameraValues['TargetW'],tapeCameraValues['TargetY']+tapeCameraValues['TargetH']),(0,255,0),2) #vision tape
+                cv.drawContours(imgGoalNew, [box], 0, (0,0,255), 2)
             
-            #cv.putText(imgGoalNew, 'Target Height: %.2f' %tapeCameraValues['TargetH'], (10, 200), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 255, 0), 2)
-            cv.putText(imgBlankRaw, 'Target Width: %.2f' %tapeCameraValues['TargetW'], (10, 170), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
-            cv.putText(imgBlankRaw, 'Rotated Angle: %.2f' %tapeRealWorldValues['TargetRotation'], (10, 10), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
-            cv.putText(imgBlankRaw, 'Rotated Height: %.2f' %rect[1][1], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
-            cv.putText(imgBlankRaw, 'Distance: %.2f' %tapeRealWorldValues['Distance'], (10, 50), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
-            cv.putText(imgBlankRaw, 'Bot Angle: %.2f' %tapeRealWorldValues['BotAngle'], (10, 70), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
-            cv.putText(imgBlankRaw, 'IPP: %.2f' %tapeCameraValues['IPP'], (10, 90), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
-            cv.putText(imgBlankRaw, 'Aspect Ratio: %.2f' %tapeRealWorldValues['AspectRatio'], (10, 110), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
-            cv.putText(imgBlankRaw, 'Offset: %.2f' %tapeCameraValues['Offset'], (10, 150), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
-            #cv.putText(imgGoalNew, 'Vert. Angle to Tape: %.2f' %tapeVAngle, (10, 215), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 255, 0), 2)
+            cv.putText(imgBlankRaw, 'Tape Distance (A): %.2f' %tapeRealWorldValues['StraightDistance'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+            cv.putText(imgBlankRaw, 'Tape Distance (S): %.2f' %tapeRealWorldValues['TapeDistance'], (10, 50), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+            cv.putText(imgBlankRaw, 'Wall Distance: %.2f' %tapeRealWorldValues['WallDistance'], (10, 70), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+            cv.putText(imgBlankRaw, 'Bot Angle: %.2f' %tapeRealWorldValues['BotAngle'], (10, 90), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+            cv.putText(imgBlankRaw, 'IPP: %.2f' %tapeCameraValues['IPP'], (10, 130), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+            cv.putText(imgBlankRaw, 'Vert Offset: %.2f' %tapeRealWorldValues['VertOffset'], (10, 150), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+            cv.putText(imgBlankRaw, 'Offset: %.2f' %tapeCameraValues['Offset'], (10, 170), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+            cv.putText(imgBlankRaw, 'Target Width: %.2f' %tapeCameraValues['TargetW'], (10, 190), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+            cv.putText(imgBlankRaw, 'Apparent Width: %.2f' %tapeRealWorldValues['ApparentWidth'], (10, 210), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
 
 
         #Put values in NetworkTables
@@ -288,8 +298,8 @@ def main():
     ballCamera.release_cam()
     goalCamera.release_cam()
 
-    #Get time then release Navx resource
-    #navx.stop_navx()
+    #Release Navx resource
+    navx.stop_navx()
     
     #Close the log file
     log_file.write('Run stopped on %s.' % datetime.datetime.now())
