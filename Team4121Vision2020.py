@@ -74,8 +74,7 @@ visionFile = '/home/pi/Team4121/Config/2020VisionSettings.txt'
 cameraValues={}
 
 #Define program control flags
-writeVideo = True
-sendVisionToDashboard = True
+videoTesting = False
 
 
 #Read vision settings file
@@ -140,16 +139,16 @@ def main():
    
     #Define local flags
     networkTablesConnected = False
-    driverCameraConnected = False
-    visionCameraConnected = False
+    ballCamConnected = False
+    goalCamConnected = False
     foundBall = False
     foundTape = False
     foundVisionTarget = False
     tapeTargetLock = False
 
     #Create Navx object
-    navx = FRCNavx('NavxStream')
-    navx.start_navx()
+    #navx = FRCNavx('NavxStream')
+    #navx.start_navx()
 
     #Get current time as a string
     currentTime = time.localtime(time.time())
@@ -165,16 +164,18 @@ def main():
     read_settings_file()
 
     #Connect NetworkTables
-##    try:
-##        NetworkTables.initialize(server='10.41.21.2')
-##        visionTable = NetworkTables.getTable("vision")
-##        navxTable = NetworkTables.getTable("navx")
-##        networkTablesConnected = True
-##        log_file.write('Connected to Networktables on 10.41.21.2 \n')
-##    except:
-##        log_file.write('Error:  Unable to connect to Network tables.\n')
-##        log_file.write('Error message: ', sys.exc_info()[0])
-##        log_file.write('\n')
+    try:
+        NetworkTables.initialize(server='10.41.21.2')
+        visionTable = NetworkTables.getTable("vision")
+        navxTable = NetworkTables.getTable("navx")
+        networkTablesConnected = True
+        log_file.write('Connected to Networktables on 10.41.21.2 \n')
+
+        visionTable.putNumber("RobotStop", 0)
+    except:
+        log_file.write('Error:  Unable to connect to Network tables.\n')
+        log_file.write('Error message: ', sys.exc_info()[0])
+        log_file.write('\n')
 
     #Create ball camera stream
     ballCamSettings = {}
@@ -220,7 +221,7 @@ def main():
         imgBlankRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
 
         #Read gyro angle
-        gyroAngle = navx.read_angle()
+        #gyroAngle = navx.read_angle()
         
         #Call detection methods
         ballX, ballY, ballRadius, ballDistance, ballAngle, ballOffset, ballScreenPercent, foundBall = visionProcessor.detect_game_balls(imgBallRaw, int(cameraValues['BallCamWidth']),
@@ -233,7 +234,7 @@ def main():
                                                                                                                         float(cameraValues['GoalCamMountAngle']),
                                                                                                                         float(cameraValues['GoalCamMountHeight']))
 
-        cv.putText(imgBlankRaw, 'Gyro: %.2f' %gyroAngle, (10, 110), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+        #cv.putText(imgBlankRaw, 'Gyro: %.2f' %gyroAngle, (10, 110), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
 
         #Draw various contours on the image
         if foundBall == True:
@@ -261,45 +262,57 @@ def main():
 
 
         #Put values in NetworkTables
-        #navxTable.putNumber("GyroAngle", round(vmx.getAHRS().GetAngle(), 2))
+        if networkTablesConnected == True:
+            #navxTable.putNumber("GyroAngle", gyroAngle)
+
+            visionTable.putBoolean("FoundTape", foundTape)
+
+            if foundTape == True:
+                visionTable.putBoolean("TargetLock", tapeTargetLock)
+                visionTable.putNumber("TapeDistance", tapeRealWorldValues['TapeDistance'])
+                visionTable.putNumber("TapeOffset", tapeCameraValues['Offset'])
+
+            visionTable.putBoolean("FoundBall", foundBall)
+            
+            if foundBall == True:
+                visionTable.putNumber("BallDistance", ballDistance)
+                visionTable.putNumber("BallAngle", ballAngle)
+                visionTable.putNumber("BallScreenPercent", ballScreenPercent)
 
         #Display the vision camera stream (for testing only)
-        cv.imshow("Ball", imgBallRaw)
-        cv.imshow("Goal", imgGoalNew)
-        cv.imshow("Data", imgBlankRaw)
+        if videoTesting == True:
+            cv.imshow("Ball", imgBallRaw)
+            cv.imshow("Goal", imgGoalNew)
+            cv.imshow("Data", imgBlankRaw)
 
-##        #Check for gyro re-zero
-##        gyroInit = navxTable.getNumber("ZeroGyro", 0)
+        #Check for gyro re-zero
+        gyroInit = navxTable.getNumber("ZeroGyro", 0)
 ##        if gyroInit == 1:
-##            vmx.getAHRS().Reset()
-##            vmx.getAHRS().ZeroYaw()
+##            navx.reset_gyro()
 ##            navxTable.putNumber("ZeroGyro", 0)
-
-        #Check for displacement zero
-        #dispInit = navxTable.getNumber("ZeroDisplace", 0)
-        #if dispInit == 1:
-        #    vmx.getAHRS().ResetDisplacement()
-        #    navxTable.putNumber("ZeroDisplace", 0)
         
         #Check for stop code from robot or keyboard (for testing)
-        if cv.waitKey(1) == 27:
+        if videoTesting == True:
+            if cv.waitKey(1) == 27:
+                break
+            
+        robotStop = visionTable.getNumber("RobotStop", 0)
+        if (robotStop == 1) or (networkTablesConnected == False):
             break
-##        robotStop = visionTable.getNumber("RobotStop", 0)
-##        if (robotStop == 1) or (visionCameraConnected == False) or (networkTablesConnected == False):
-##            break
 
         #Pause before next analysis
         time.sleep(0.066) #should give ~15 FPS
 
     #Close all open windows (for testing)
-    cv.destroyAllWindows()
+    if videoTesting == True:
+        cv.destroyAllWindows()
 
     #Release camera resources
     ballCamera.release_cam()
     goalCamera.release_cam()
 
     #Release Navx resource
-    navx.stop_navx()
+    #navx.stop_navx()
     
     #Close the log file
     log_file.write('Run stopped on %s.' % datetime.datetime.now())
