@@ -184,7 +184,7 @@ def main():
     ballCamSettings['Brightness'] = cameraValues['BallCamBrightness']
     ballCamSettings['Exposure'] = cameraValues['BallCamExposure']
     ballCamSettings['FPS'] = cameraValues['BallCamFPS']
-    ballCamera = FRCWebCam('/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.5:1.0-video-index0', "BallCam", ballCamSettings)
+    ballCamera = FRCWebCam('/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.4.2:1.0-video-index0', "BallCam", ballCamSettings)
     ballCamera.start_camera()
 
     #Create goal camera stream
@@ -194,7 +194,7 @@ def main():
     goalCamSettings['Brightness'] = cameraValues['GoalCamBrightness']
     goalCamSettings['Exposure'] = cameraValues['GoalCamExposure']
     goalCamSettings['FPS'] = cameraValues['GoalCamFPS']
-    goalCamera = FRCWebCam('/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.4:1.0-video-index0', "GoalCam", goalCamSettings)
+    goalCamera = FRCWebCam('/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.4.4:1.0-video-index0', "GoalCam", goalCamSettings)
     goalCamera.start_camera()
 
     #Create vision processing
