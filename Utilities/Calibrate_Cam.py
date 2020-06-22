@@ -31,10 +31,10 @@ import time
 import logging
 
 # Set general variables
-calibration_dir = 'C:/Users/timfu/Documents/FRC General/Camera'
-working_dir = 'C:/Users/timfu/Documents/FRC General/Camera/Calibration_Images'
-#calibration_dir = '/home/pi/Programs/Python/Camera'
-#working_dir = '/home/pi/Programs/Python/Camera/Calibration_Images'
+#calibration_dir = 'C:/Users/timfu/Documents/FRC General/Camera'
+#working_dir = 'C:/Users/timfu/Documents/FRC General/Camera/Calibration_Images'
+calibration_dir = '/home/pi/Programs/Python/Camera'
+working_dir = '/home/pi/Programs/Python/Camera/Calibration_Images'
 criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
 # Set image variables
