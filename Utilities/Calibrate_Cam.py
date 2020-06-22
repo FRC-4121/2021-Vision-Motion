@@ -82,7 +82,7 @@ def mainloop():
         camera.open(device_id)
 
     # Create a blank image
-    img = np.zeros(shape=(img_width, img_height, 3), dtype=np.uint8)
+    frame = np.zeros(shape=(img_width, img_height, 3), dtype=np.uint8)
 
     # Grab the required number of calibration images
     good_images = 0

@@ -67,6 +67,10 @@ class FRCStereoCam:
         if self.rightCamStream.isOpened() == False:
             self.rightCamStream.open(self.right_id)
 
+        # Initialize blank frames
+        self.leftFrame = np.zeros(shape=(settings['Width'], settings['Height'], 3), dtype=np.uint8)
+        self.rightFrame = np.zeros(shape=(settings['Width'], settings['Height'], 3), dtype=np.uint8)
+
         # Grab an initial frames
         (self.leftGrabbed, self.leftFrame) = self.leftCamStream.read()
         (self.rightGrabbed, self.rightFrame) = self.rightCamStream.read()
@@ -129,8 +133,40 @@ class FRCStereoCam:
     # Define frame read method
     def read_frame(self):
 
+        # Undistort images
+        if self.undistort_left == True and self.undistort_right == True:
+
+            left_h, left_w = self.leftFrame.shape[:2]
+            (new_left_matrix, left_roi) = cv.getOptimalNewCameraMatrix(self.left_cam_matrix,
+                                                                       self.left_distort_coeffs,
+                                                                       (left_w,left_h),
+                                                                       1,
+                                                                       (left_w,left_h))
+            newLeftFrame = cv.undistort(self.leftFrame, self.left_cam_matrix,
+                                        self.left_distort_coeffs, None,
+                                        new_left_matrix)
+            x,y,w,h = left_roi
+            newLeftFrame = newLeftFrame[y:y+h,x:x+w]
+
+            right_h, right_w = self.rightFrame.shape[:2]
+            (new_right_matrix, right_roi) = cv.getOptimalNewCameraMatrix(self.right_cam_matrix,
+                                                                         self.right_distort_coeffs,
+                                                                         (right_w,right_h),
+                                                                         1,
+                                                                         (right_w,right_h))
+            newRightFrame = cv.undistort(self.rightFrame, self.right_cam_matrix,
+                                         self.right_distort_coeffs, None,
+                                         new_right_matrix)
+            x,y,w,h = right_roi
+            newRightFrame = newRightFrame[y:y+h,x:x+w]
+
+        else:
+            
+            newLeftFrame = self.leftFrame
+            newRightFrame = self.rightFrame
+
         # Return the most recent frame
-        return self.leftFrame, self.rightFrame
+        return newLeftFrame, newRightFrame
 
 
     # Define camera release method

@@ -26,12 +26,18 @@ import cv2 as cv
 import numpy as np
 from threading import Thread
 
+# Set global variables
+calibration_dir = '/home/pi/Team4121/Config'
+
 
 # Define the web camera class
 class FRCWebCam:
 
     # Define initialization
     def __init__(self, src, name, settings):
+
+        # Initialize instance variables
+        self.undistort_img = False
 
         # Set up web camera
         self.device_id = src
@@ -46,6 +52,9 @@ class FRCWebCam:
         if self.camStream.isOpened() == False:
             self.camStream.open(self.device_id)
 
+        # Initialize blank frames
+        self.frame = np.zeros(shape=(settings['Width'], settings['Height'], 3), dtype=np.uint8)
+
         # Grab an initial frame
         (self.grabbed, self.frame) = self.camStream.read()
 
@@ -56,7 +65,12 @@ class FRCWebCam:
         self.stopped = False
 
         # Read camera calibration files
-
+        cam_matrix_file = calibration_dir + '/Camera_Matrix_Cam' + str(self.left_id) + '.txt'
+        cam_coeffs_file = calibration_dir + '/Distortion_Coeffs_Cam' + str(self.left_id) + '.txt'
+        if os.path.isfile(cam_matrix_file) == True and os.path.isfile(cam_coeffs_file) == True:
+            self.cam_matrix = np.loadtxt(cam_matrix_file)
+            self.distort_coeffs = np.loadtxt(cam_coeffs_file)
+            self.undistort_img = True
 
 
     # Define camera thread start method
@@ -94,8 +108,25 @@ class FRCWebCam:
     # Define frame read method
     def read_frame(self):
 
-        #Return the most recent frame
-        return self.frame
+        # Undistort image
+        if self.undistort_img == True:
+            h, w = self.frame.shape[:2]
+            (new_matrix, roi) = cv.getOptimalNewCameraMatrix(self.cam_matrix,
+                                                             self.distort_coeffs,
+                                                             (w,h),1,(w,h))
+            newFrame = cv.undistort(self.frame, self.cam_matrix,
+                                    self.distort_coeffs, None,
+                                    new_matrix)
+            x,y,w,h = roi
+            newFrame = newFrame[y:y+h,x:x+w]
+
+        else:
+
+            newFrame = self.frame
+
+
+        # Return the most recent frame
+        return newFrame
 
 
     # Define camera release method
