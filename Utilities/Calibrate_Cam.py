@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 ###############################################################
 #                                                             #
 #                   FRC Camera Calibration                    #
@@ -7,9 +9,9 @@
 #  as the calibration image.  This program assumes no more    #
 #  than 4 webcams are connected at the same time.             #
 #                                                             #
-#  Author: Tim Fuller - Team 4121 Mentor                      #
-#  Date: 6/20/2020                                            #
-#  Version: 1.0                                               #
+#  @Author: Team4121                                          #
+#  @Created: 2020-06-20                                       #
+#  @Version: 1.0                                              #
 #                                                             #
 ###############################################################
 

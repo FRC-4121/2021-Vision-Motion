@@ -1,59 +1,68 @@
 # -*- coding: utf-8 -*-
 
-#-----------------------------------------------------------------
-#
-# FRC Camera Library
-#
-# This class provides methods and utilities for web cameras used
-# for vision processing during an FRC game.
-# 
-# @Version: 1.0
-#  
-# @Created: 2020-2-7
-#
-# @Author: Team 4121
-#
-#-----------------------------------------------------------------
+######################################################################
+#                                                                    #
+#                        FRC Camera Library                          #
+#                                                                    #
+#  This class provides methods and utilities for web cameras used    #
+#  for vision processing during an FRC game.  Reading of the webcam  #
+#  frames is threaded for improved performance.                      #
+#                                                                    #
+# @Version: 1.0                                                      #
+# @Created: 2020-2-7                                                 #
+# @Author: Team 4121                                                 #
+#                                                                    #
+######################################################################
 
-'''FRC Camera Library - Provides camera methods and utilities'''
+'''FRC Camera Library - Provides threaded camera methods and utilities'''
 
 #!/usr/bin/env python3
 
-#System imports
+# System imports
 import os
 
-#Module Imports
+# Module Imports
 import cv2 as cv
+import numpy as np
 from threading import Thread
 
-#Define the web camera class
+
+# Define the web camera class
 class FRCWebCam:
 
-    #Define initialization
+    # Define initialization
     def __init__(self, src, name, settings):
 
-        #Set up web camera
-        self.camStream = cv.VideoCapture(src)
+        # Set up web camera
+        self.device_id = src
+        self.camStream = cv.VideoCapture(self.device_id)
         self.camStream.set(cv.CAP_PROP_FRAME_WIDTH, int(settings['Width']))
         self.camStream.set(cv.CAP_PROP_FRAME_HEIGHT, int(settings['Height']))
         self.camStream.set(cv.CAP_PROP_BRIGHTNESS, float(settings['Brightness']))
         self.camStream.set(cv.CAP_PROP_EXPOSURE, int(settings['Exposure']))
         self.camStream.set(cv.CAP_PROP_FPS, int(settings['FPS']))
 
-        #Grab an initial frame
+        # Make sure video capture is opened
+        if self.camStream.isOpened() == False:
+            self.camStream.open(self.device_id)
+
+        # Grab an initial frame
         (self.grabbed, self.frame) = self.camStream.read()
 
-        #Name the stream
+        # Name the stream
         self.name = name
 
-        #Initialize stop flag
+        # Initialize stop flag
         self.stopped = False
 
+        # Read camera calibration files
 
-    #Define camera thread start method
+
+
+    # Define camera thread start method
     def start_camera(self):
 
-        #Define camera thread
+        # Define camera thread
         camThread = Thread(target=self.update, name=self.name, args=())
         camThread.daemon = True
         camThread.start()
@@ -61,39 +70,39 @@ class FRCWebCam:
         return self
 
 
-    #Define camera thread stop method
+    # Define camera thread stop method
     def stop_camera(self):
 
         #Set stop flag
         self.stopped = True
 
 
-    #Define camera update method
+    # Define camera update method
     def update(self):
 
-        #Main thread loop
+        # Main thread loop
         while True:
 
-            #Check stop flag
+            # Check stop flag
             if self.stopped:
                 return
             
-            #If not stopping, grab new frame
+            # If not stopping, grab new frame
             (self.grabbed, self.frame) = self.camStream.read()
 
 
-    #Define frame read method
+    # Define frame read method
     def read_frame(self):
 
         #Return the most recent frame
         return self.frame
 
 
-    #Define camera release method
+    # Define camera release method
     def release_cam(self):
 
-        #Stop the camera thread
+        # Stop the camera thread
         self.stop_camera()
 
-        #Release the camera resource
+        # Release the camera resource
         self.camStream.release()
