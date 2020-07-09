@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
 ######################################################################
 #                                                                    #
@@ -15,8 +16,6 @@
 ######################################################################
 
 '''FRC Camera Library - Provides threaded camera methods and utilities'''
-
-#!/usr/bin/env python3
 
 # System imports
 import os

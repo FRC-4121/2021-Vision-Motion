@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
 ####################################################################
 #                                                                  #
@@ -11,13 +12,11 @@
 #                                                                  #
 #  @Version: 1.0                                                   #
 #  @Created: 2020-02-14                                            #
-#  @Author: Team                                                   #
+#  @Author: Team 4121                                              #
 #                                                                  #
 ####################################################################
 
 '''FRC Stereo Camera Library - Provides stereo camera methods and utilities'''
-
-#!/usr/bin/env python3
 
 # System imports
 import os
