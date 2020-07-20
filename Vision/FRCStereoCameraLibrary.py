@@ -27,7 +27,8 @@ import numpy as np
 from threading import Thread
 
 # Set global variables
-calibration_dir = '/home/pi/Team4121/Config'
+#calibration_dir = '/home/pi/Team4121/Config'
+calibration_dir = 'C:/FRC-Test/Config/Calibration'
 
 
 # Define the web camera class
@@ -43,10 +44,14 @@ class FRCStereoCam:
         # Set up left camera
         self.left_id = leftSrc
         self.leftCamStream = cv.VideoCapture(self.left_id)
-        self.leftCamStream.set(cv.CAP_PROP_FRAME_WIDTH, int(settings['Width']))
-        self.leftCamStream.set(cv.CAP_PROP_FRAME_HEIGHT, int(settings['Height']))
-        self.leftCamStream.set(cv.CAP_PROP_BRIGHTNESS, float(settings['Brightness']))
-        self.leftCamStream.set(cv.CAP_PROP_EXPOSURE, int(settings['Exposure']))
+        self.leftCamStream.set(cv.CAP_PROP_FRAME_WIDTH, 
+                                int(settings['Width']))
+        self.leftCamStream.set(cv.CAP_PROP_FRAME_HEIGHT, 
+                                int(settings['Height']))
+        self.leftCamStream.set(cv.CAP_PROP_BRIGHTNESS, 
+                                float(settings['Brightness']))
+        self.leftCamStream.set(cv.CAP_PROP_EXPOSURE, 
+                                int(settings['Exposure']))
         self.leftCamStream.set(cv.CAP_PROP_FPS, int(settings['FPS']))
 
         # Make sure lefgt camera is opened
@@ -56,10 +61,14 @@ class FRCStereoCam:
         # Set up right camera
         self.right_id = rightSrc
         self.rightCamStream = cv.VideoCapture(self.right_id)
-        self.rightCamStream.set(cv.CAP_PROP_FRAME_WIDTH, int(settings['Width']))
-        self.rightCamStream.set(cv.CAP_PROP_FRAME_HEIGHT, int(settings['Height']))
-        self.rightCamStream.set(cv.CAP_PROP_BRIGHTNESS, float(settings['Brightness']))
-        self.rightCamStream.set(cv.CAP_PROP_EXPOSURE, int(settings['Exposure']))
+        self.rightCamStream.set(cv.CAP_PROP_FRAME_WIDTH, 
+                                int(settings['Width']))
+        self.rightCamStream.set(cv.CAP_PROP_FRAME_HEIGHT, 
+                                int(settings['Height']))
+        self.rightCamStream.set(cv.CAP_PROP_BRIGHTNESS, 
+                                float(settings['Brightness']))
+        self.rightCamStream.set(cv.CAP_PROP_EXPOSURE, 
+                                int(settings['Exposure']))
         self.rightCamStream.set(cv.CAP_PROP_FPS, int(settings['FPS']))
 
         # Make sure right camera is opened
@@ -67,8 +76,12 @@ class FRCStereoCam:
             self.rightCamStream.open(self.right_id)
 
         # Initialize blank frames
-        self.leftFrame = np.zeros(shape=(settings['Width'], settings['Height'], 3), dtype=np.uint8)
-        self.rightFrame = np.zeros(shape=(settings['Width'], settings['Height'], 3), dtype=np.uint8)
+        self.leftFrame = np.zeros(shape=(int(settings['Width']), 
+                                    int(settings['Height']), 3), 
+                                    dtype=np.uint8)
+        self.rightFrame = np.zeros(shape=(int(settings['Width']), 
+                                    int(settings['Height']), 3), 
+                                    dtype=np.uint8)
 
         # Grab an initial frames
         (self.leftGrabbed, self.leftFrame) = self.leftCamStream.read()
@@ -81,17 +94,23 @@ class FRCStereoCam:
         self.stopped = False
 
         # Read left camera calibrarion files
-        left_matrix_file = calibration_dir + '/Camera_Matrix_Cam' + str(self.left_id) + '.txt'
-        left_coeffs_file = calibration_dir + '/Distortion_Coeffs_Cam' + str(self.left_id) + '.txt'
-        if os.path.isfile(left_matrix_file) == True and os.path.isfile(left_coeffs_file) == True:
+        left_matrix_file = (calibration_dir + '/Camera_Matrix_Cam' + 
+                                str(self.left_id) + '.txt')
+        left_coeffs_file = (calibration_dir + '/Distortion_Coeffs_Cam' + 
+                                str(self.left_id) + '.txt')
+        if (os.path.isfile(left_matrix_file) == True and 
+          os.path.isfile(left_coeffs_file) == True):
             self.left_cam_matrix = np.loadtxt(left_matrix_file)
             self.left_distort_coeffs = np.loadtxt(left_coeffs_file)
             self.undistort_left = True
        
         # Read right camera calibration files
-        right_matrix_file = calibration_dir + '/Camera_Matrix_Cam' + str(self.right_id) + '.txt'
-        right_coeffs_file = calibration_dir + '/Distortion_Coeffs_Cam' + str(self.right_id) + '.txt'
-        if os.path.isfile(right_matrix_file) == True and os.path.isfile(right_coeffs_file) == True:
+        right_matrix_file = (calibration_dir + '/Camera_Matrix_Cam' + 
+                                str(self.right_id) + '.txt')
+        right_coeffs_file = (calibration_dir + '/Distortion_Coeffs_Cam' + 
+                                str(self.right_id) + '.txt')
+        if (os.path.isfile(right_matrix_file) == True and 
+          os.path.isfile(right_coeffs_file) == True):
             self.right_cam_matrix = np.loadtxt(right_matrix_file)
             self.right_distort_coeffs = np.loadtxt(right_coeffs_file)
             self.undistort_right = True
@@ -136,25 +155,31 @@ class FRCStereoCam:
         if self.undistort_left == True and self.undistort_right == True:
 
             left_h, left_w = self.leftFrame.shape[:2]
-            (new_left_matrix, left_roi) = cv.getOptimalNewCameraMatrix(self.left_cam_matrix,
-                                                                       self.left_distort_coeffs,
-                                                                       (left_w,left_h),
-                                                                       1,
-                                                                       (left_w,left_h))
-            newLeftFrame = cv.undistort(self.leftFrame, self.left_cam_matrix,
-                                        self.left_distort_coeffs, None,
+            (new_left_matrix, left_roi) = cv.getOptimalNewCameraMatrix(
+                                            self.left_cam_matrix,
+                                            self.left_distort_coeffs,
+                                            (left_w,left_h),
+                                            1,
+                                            (left_w,left_h))
+            newLeftFrame = cv.undistort(self.leftFrame, 
+                                        self.left_cam_matrix,
+                                        self.left_distort_coeffs, 
+                                        None,
                                         new_left_matrix)
             x,y,w,h = left_roi
             newLeftFrame = newLeftFrame[y:y+h,x:x+w]
 
             right_h, right_w = self.rightFrame.shape[:2]
-            (new_right_matrix, right_roi) = cv.getOptimalNewCameraMatrix(self.right_cam_matrix,
-                                                                         self.right_distort_coeffs,
-                                                                         (right_w,right_h),
-                                                                         1,
-                                                                         (right_w,right_h))
-            newRightFrame = cv.undistort(self.rightFrame, self.right_cam_matrix,
-                                         self.right_distort_coeffs, None,
+            (new_right_matrix, right_roi) = cv.getOptimalNewCameraMatrix(
+                                            self.right_cam_matrix,
+                                            self.right_distort_coeffs,
+                                            (right_w,right_h),
+                                            1,
+                                            (right_w,right_h))
+            newRightFrame = cv.undistort(self.rightFrame, 
+                                        self.right_cam_matrix,
+                                         self.right_distort_coeffs, 
+                                         None,
                                          new_right_matrix)
             x,y,w,h = right_roi
             newRightFrame = newRightFrame[y:y+h,x:x+w]

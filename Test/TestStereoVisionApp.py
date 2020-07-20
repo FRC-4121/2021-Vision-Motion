@@ -24,12 +24,12 @@ import os
 import imp
 
 # Setup paths for PI use
-sys.path.append('/usr/local/lib/python3.5/dist-packages')
-sys.path.append('/home/pi/.local/lib/python3.5/site-packages')
-sys.path.append('/home/pi/Team4121/Libraries')
+#sys.path.append('/usr/local/lib/python3.5/dist-packages')
+#sys.path.append('/home/pi/.local/lib/python3.5/site-packages')
+#sys.path.append('/home/pi/Team4121/Libraries')
 
 # Setup paths for Windows use
-sys.path.append()
+sys.path.append('C:/FRC-Test/Libraries')
 
 # Module imports
 import cv2 as cv
@@ -45,8 +45,10 @@ from FRCVisionLibrary import VisionLibrary
 from FRCStereoCameraLibrary import FRCStereoCam
 
 # Declare global variables
-cameraFile = '/home/pi/Team4121/Config/2020CameraSettings.txt'
-visionFile = '/home/pi/Team4121/Config/2020VisionSettings.txt'
+#cameraFile = '/home/pi/Team4121/Config/2020CameraSettings.txt'
+#visionFile = '/home/pi/Team4121/Config/2020VisionSettings.txt'
+cameraFile = 'C:/FRC-Test/Config/2020CameraSettings.txt'
+visionFile = 'C:/FRC-Test/Config/2020VisionSettings.txt'
 cameraValues={}
 
 
@@ -111,7 +113,7 @@ def mainloop():
     camSettings['Brightness'] = cameraValues['BallCamBrightness']
     camSettings['Exposure'] = cameraValues['BallCamExposure']
     camSettings['FPS'] = cameraValues['BallCamFPS']
-    stereoCamera = FRCStereoCam(0, 1, "StereoCam", camSettings)
+    stereoCamera = FRCStereoCam(1, 2, "StereoCam", camSettings)
     stereoCamera.start_camera()
 
     #Create blank images
