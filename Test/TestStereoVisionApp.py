@@ -29,7 +29,7 @@ sys.path.append('/home/pi/.local/lib/python3.5/site-packages')
 sys.path.append('/home/pi/Team4121/Libraries')
 
 # Setup paths for Windows use
-sys.path.append()
+#sys.path.append('C:/FRC-Test/Libraries')
 
 # Module imports
 import cv2 as cv
@@ -38,7 +38,7 @@ import math
 import datetime
 import time
 import logging
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 
 # Team 4121 module imports
 from FRCVisionLibrary import VisionLibrary
@@ -47,6 +47,8 @@ from FRCStereoCameraLibrary import FRCStereoCam
 # Declare global variables
 cameraFile = '/home/pi/Team4121/Config/2020CameraSettings.txt'
 visionFile = '/home/pi/Team4121/Config/2020VisionSettings.txt'
+#cameraFile = 'C:/FRC-Test/Config/2020CameraSettings.txt'
+#visionFile = 'C:/FRC-Test/Config/2020VisionSettings.txt'
 cameraValues={}
 
 
