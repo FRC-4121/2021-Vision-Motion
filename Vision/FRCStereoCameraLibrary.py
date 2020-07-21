@@ -37,9 +37,37 @@ class FRCStereoCam:
     # Define initialization
     def __init__(self, leftSrc, rightSrc, name, settings):
 
+        # Name the stream
+        self.name = name
+
         # Initialize instance variables
         self.undistort_left = False
         self.undistort_right = False
+
+        # Initialize stop flag
+        self.stopped = False
+
+        # Read left camera calibrarion files
+        left_matrix_file = (calibration_dir + '/Camera_Matrix_Cam' + 
+                                str(self.left_id) + '.txt')
+        left_coeffs_file = (calibration_dir + '/Distortion_Coeffs_Cam' + 
+                                str(self.left_id) + '.txt')
+        if (os.path.isfile(left_matrix_file) == True and 
+          os.path.isfile(left_coeffs_file) == True):
+            self.left_cam_matrix = np.loadtxt(left_matrix_file)
+            self.left_distort_coeffs = np.loadtxt(left_coeffs_file)
+            self.undistort_left = True
+       
+        # Read right camera calibration files
+        right_matrix_file = (calibration_dir + '/Camera_Matrix_Cam' + 
+                                str(self.right_id) + '.txt')
+        right_coeffs_file = (calibration_dir + '/Distortion_Coeffs_Cam' + 
+                                str(self.right_id) + '.txt')
+        if (os.path.isfile(right_matrix_file) == True and 
+          os.path.isfile(right_coeffs_file) == True):
+            self.right_cam_matrix = np.loadtxt(right_matrix_file)
+            self.right_distort_coeffs = np.loadtxt(right_coeffs_file)
+            self.undistort_right = True
 
         # Set up left camera
         self.left_id = leftSrc
@@ -54,7 +82,7 @@ class FRCStereoCam:
                                 int(settings['Exposure']))
         self.leftCamStream.set(cv.CAP_PROP_FPS, int(settings['FPS']))
 
-        # Make sure lefgt camera is opened
+        # Make sure left camera is opened
         if self.leftCamStream.isOpened() == False:
             self.leftCamStream.open(self.left_id)
 
@@ -83,37 +111,10 @@ class FRCStereoCam:
                                     int(settings['Height']), 3), 
                                     dtype=np.uint8)
 
-        # Grab an initial frames
+        # Grab initial frames
         (self.leftGrabbed, self.leftFrame) = self.leftCamStream.read()
         (self.rightGrabbed, self.rightFrame) = self.rightCamStream.read()
 
-        # Name the stream
-        self.name = name
-
-        # Initialize stop flag
-        self.stopped = False
-
-        # Read left camera calibrarion files
-        left_matrix_file = (calibration_dir + '/Camera_Matrix_Cam' + 
-                                str(self.left_id) + '.txt')
-        left_coeffs_file = (calibration_dir + '/Distortion_Coeffs_Cam' + 
-                                str(self.left_id) + '.txt')
-        if (os.path.isfile(left_matrix_file) == True and 
-          os.path.isfile(left_coeffs_file) == True):
-            self.left_cam_matrix = np.loadtxt(left_matrix_file)
-            self.left_distort_coeffs = np.loadtxt(left_coeffs_file)
-            self.undistort_left = True
-       
-        # Read right camera calibration files
-        right_matrix_file = (calibration_dir + '/Camera_Matrix_Cam' + 
-                                str(self.right_id) + '.txt')
-        right_coeffs_file = (calibration_dir + '/Distortion_Coeffs_Cam' + 
-                                str(self.right_id) + '.txt')
-        if (os.path.isfile(right_matrix_file) == True and 
-          os.path.isfile(right_coeffs_file) == True):
-            self.right_cam_matrix = np.loadtxt(right_matrix_file)
-            self.right_distort_coeffs = np.loadtxt(right_coeffs_file)
-            self.undistort_right = True
 
     # Define camera thread start method
     def start_camera(self):
