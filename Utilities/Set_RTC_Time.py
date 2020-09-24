@@ -45,7 +45,8 @@ class MainWindow(ttk.Frame):
         self.master.rowconfigure(0, weight=1)
         self.master.geometry('640x480+30+30')
         self.master.option_add('*tearOff',FALSE)
-        self.mastercontent = ttk.PanedWindow(self.master, orient=VERTICAL)
+        self.mastercontent = ttk.PanedWindow(self.master, 
+                                             orient=VERTICAL)
         self.mastercontent.grid(column=0, row=0, sticky=(N,S,E,W))
 
         # Declare class variables
@@ -73,7 +74,10 @@ class MainWindow(ttk.Frame):
     def create_current_frame(self):
 
         # Create current time frame
-        self.currentFrame = ttk.Frame(self.mastercontent, borderwidth=1, relief='solid', padding=(5))
+        self.currentFrame = ttk.Frame(self.mastercontent, 
+                                      borderwidth=1, 
+                                      relief='solid', 
+                                      padding=(5))
         self.mastercontent.add(self.currentFrame, weight=1)
 
         # Define display grid
@@ -88,43 +92,69 @@ class MainWindow(ttk.Frame):
         self.currentFrame.columnconfigure(5, weight=1)
 
         # Create header
-        self.currHeaderLabel = Label(self.currentFrame, text='Current Date / Time', justify='center')
+        self.currHeaderLabel = Label(self.currentFrame, 
+                                     text='Current Date / Time', 
+                                     justify='center')
         self.currHeaderLabel.grid(row=0, column=0, columnspan=6)
 
         # Create month display
-        self.currMonthLabel = Label(self.currentFrame, text='Month', justify='center')
+        self.currMonthLabel = Label(self.currentFrame, 
+                                    text='Month', 
+                                    justify='center')
         self.currMonthLabel.grid(row=1, column=0, sticky=(E,W))
-        self.currMonth = Label(self.currentFrame, textvariable=self.currentMonth, justify='center')
+        self.currMonth = Label(self.currentFrame, 
+                               textvariable=self.currentMonth, 
+                               justify='center')
         self.currMonth.grid(row=2, column=0, sticky=(E,W))
 
         # Create day display
-        self.currDayLabel = Label(self.currentFrame, text='Day', justify='center')
+        self.currDayLabel = Label(self.currentFrame, 
+                                  text='Day', 
+                                  justify='center')
         self.currDayLabel.grid(row=1, column=1, sticky=(E,W))
-        self.currDay = Label(self.currentFrame, textvariable=self.currentDay, justify='center')
+        self.currDay = Label(self.currentFrame, 
+                             textvariable=self.currentDay, 
+                             justify='center')
         self.currDay.grid(row=2, column=1, sticky=(E,W))
 
         # Create year display
-        self.currYearLabel = Label(self.currentFrame, text='Year', justify='center')
+        self.currYearLabel = Label(self.currentFrame, 
+                                   text='Year', 
+                                   justify='center')
         self.currYearLabel.grid(row=1, column=2, sticky=(E,W))
-        self.currYear = Label(self.currentFrame, textvariable=self.currentYear, justify='center')
+        self.currYear = Label(self.currentFrame, 
+                              textvariable=self.currentYear, 
+                              justify='center')
         self.currYear.grid(row=2, column=2, sticky=(E,W))
 
         # Create hours display
-        self.currHourLabel = Label(self.currentFrame, text='Hours', justify='center')
+        self.currHourLabel = Label(self.currentFrame, 
+                                   text='Hours', 
+                                   justify='center')
         self.currHourLabel.grid(row=1, column=3, sticky=(E,W))
-        self.currHour = Label(self.currentFrame, textvariable=self.currentYear, justify='center')
+        self.currHour = Label(self.currentFrame, 
+                              textvariable=self.currentYear, 
+                              justify='center')
         self.currHour.grid(row=2, column=3, sticky=(E,W))
 
         # Create minutes display
-        self.currMinuteLabel = Label(self.currentFrame, text='Minutes', justify='center')
+        self.currMinuteLabel = Label(self.currentFrame, 
+                                     text='Minutes', 
+                                     justify='center')
         self.currMinuteLabel.grid(row=1, column=4, sticky=(E,W))
-        self.currMinute = Label(self.currentFrame, textvariable=self.currentMinute, justify='center')
+        self.currMinute = Label(self.currentFrame, 
+                                textvariable=self.currentMinute, 
+                                justify='center')
         self.currMinute.grid(row=2, column=4, sticky=(E,W))
 
         # Create seconds display
-        self.currSecondLabel = Label(self.currentFrame, text='Seconds', justify='center')
+        self.currSecondLabel = Label(self.currentFrame, 
+                                     text='Seconds', 
+                                     justify='center')
         self.currSecondLabel.grid(row=1, column=5, sticky=(E,W))
-        self.currSecond = Label(self.currentFrame, textvariable=self.currentSecond, justify='center')
+        self.currSecond = Label(self.currentFrame, 
+                                textvariable=self.currentSecond, 
+                                justify='center')
         self.currSecond.grid(row=2, column=5, sticky=(E,W))
 
 
@@ -132,7 +162,10 @@ class MainWindow(ttk.Frame):
     def set_time_frame(self):
 
         # Create set time frame
-        self.setFrame = ttk.Frame(self.mastercontent, borderwidth=1, relief='solid', padding=(5))
+        self.setFrame = ttk.Frame(self.mastercontent, 
+                                  borderwidth=1, 
+                                  relief='solid', 
+                                  padding=(5))
         self.mastercontent.add(self.setFrame, weight=1)
 
         # Define display grid
@@ -147,13 +180,19 @@ class MainWindow(ttk.Frame):
         self.setFrame.columnconfigure(5, weight=1)
 
         # Create header
-        self.setHeaderLabel = Label(self.setFrame, text='Set Date / Time', justify='center')
+        self.setHeaderLabel = Label(self.setFrame, 
+                                    text='Set Date / Time', 
+                                    justify='center')
         self.setHeaderLabel.grid(row=0, column=0, columnspan=6)
 
         # Create month input
-        self.setMonthLabel = Label(self.setFrame, text='Set Month', justify='center')
+        self.setMonthLabel = Label(self.setFrame, 
+                                   text='Set Month', 
+                                   justify='center')
         self.setMonthLabel.grid(row=1, column=0, sticky=(E,W))
-        self.setMonth = Label(self.setFrame, text='September', justify='center')
+        self.setMonth = Label(self.setFrame, 
+                              text='September', 
+                              justify='center')
         self.setMonth.grid(row=2, column=0, sticky=(E,W))
 
 
