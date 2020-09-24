@@ -76,6 +76,8 @@ class FRCNavx:
         self.angle = 0.0
         self.yaw = 0.0
         self.pitch = 0.0
+        self.time = []
+        self.date = []
         
         # Reset Navx
         if self.vmxOpen is True:
@@ -111,10 +113,14 @@ class FRCNavx:
             if self.stopped:
                 return
 
-            # If not stopped, read Navx values
+            # If not stopped, read Navx gyro values
             self.angle = round(self.vmx.getAHRS().GetAngle(), 2)
             #self.yaw = round(self.vmx.getAHRS().GetYaw(), 2)
             #self.pitch = round(self.vmx.getAHRS().GetPitch(), 2)
+
+            # Read Navx time and date
+            self.time = self.vmx.getTime().GetRTCTime
+            self.date = self.vmx.getTime().GetRTCDate
 
             time.sleep(.5)
     
@@ -144,7 +150,33 @@ class FRCNavx:
         self.vmx.ZeroYaw()
 
 
-    # Define current time method
-    def get_time(self):
+    # Define read time method
+    def read_time(self):
 
-        return
+        return self.time
+    
+
+    # Define read date method
+    def read_date(self):
+
+        return self.date
+    
+
+    # Define set time method
+    def set_time(self, newtime):
+
+        success = self.vmx.getTime().SetRTCTime(newtime[0], 
+                                                newtime[1],
+                                                newtime[2])
+        
+        return success
+    
+
+    # Define set date method
+    def set_date(self, newdate):
+
+        success = self.vmx.getTime().SetRTCDate(newdate[0],
+                                                newdate[1],
+                                                newdate[2])
+
+        return success
