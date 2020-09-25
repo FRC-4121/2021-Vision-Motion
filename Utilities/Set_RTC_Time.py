@@ -23,12 +23,17 @@ import sys
 import os
 import imp
 
-# Setup paths
+#Setup paths
+sys.path.append('/home/pi/.local/lib/python3.5/site-packages')
+sys.path.append('/home/pi/Team4121/Libraries')
 sys.path.append('/usr/local/lib/vmxpi/')
 
 # Module imports
 from tkinter import *
 from tkinter import ttk
+
+#Team 4121 module imports
+from FRCNavxLibrary import FRCNavx
 
 
 # Define the main window
@@ -36,6 +41,14 @@ class MainWindow(ttk.Frame):
 
     # Override initialization method
     def __init__(self, master = None):
+
+         # Declare class variables
+        self.currentMonth = StringVar()
+        self.currentDay = StringVar()
+        self.currentYear = StringVar()
+        self.currentHour = StringVar()
+        self.currentMinute = StringVar()
+        self.currentSecond = StringVar()
 
         # Set master window
         super().__init__(master)
@@ -49,22 +62,20 @@ class MainWindow(ttk.Frame):
                                              orient=VERTICAL)
         self.mastercontent.grid(column=0, row=0, sticky=(N,S,E,W))
 
-        # Declare class variables
-        self.currentMonth = StringVar()
-        self.currentDay = StringVar()
-        self.currentYear = StringVar()
-        self.currentHour = StringVar()
-        self.currentMinute = StringVar()
-        self.currentSecond = StringVar()
+        # Create Navx object
+        self.navx = FRCNavx('NavxStream')
+        self.navx.start_navx()
 
-        # Initialize variables
-        self.currentMonth.set('September')
-        self.currentDay.set('22')
-        self.currentYear.set('2020')
-        self.currentHour.set('12')
-        self.currentMinute.set('00')
-        self.currentSecond.set('00')
-
+        # Initialize time variables
+        self.currentTime = self.navx.read_time()
+        self.currentDate = self.navx.read_date()
+        self.currentMonth.set(str(self.currentDate[3]))
+        self.currentDay.set(str(self.currentDate[2]))
+        self.currentYear.set(str(2000 + self.currentDate[4]))
+        self.currentHour.set(str(self.currentTime[1]))
+        self.currentMinute.set(str(self.currentTime[2]))
+        self.currentSecond.set(str(self.currentTime[3]))
+        
         # Create main areas
         self.create_current_frame()
         self.set_time_frame()
@@ -104,7 +115,8 @@ class MainWindow(ttk.Frame):
         self.currMonthLabel.grid(row=1, column=0, sticky=(E,W))
         self.currMonth = Label(self.currentFrame, 
                                textvariable=self.currentMonth, 
-                               justify='center')
+                               justify='center',
+                               borderwidth=1)
         self.currMonth.grid(row=2, column=0, sticky=(E,W))
 
         # Create day display
@@ -133,7 +145,7 @@ class MainWindow(ttk.Frame):
                                    justify='center')
         self.currHourLabel.grid(row=1, column=3, sticky=(E,W))
         self.currHour = Label(self.currentFrame, 
-                              textvariable=self.currentYear, 
+                              textvariable=self.currentHour, 
                               justify='center')
         self.currHour.grid(row=2, column=3, sticky=(E,W))
 
@@ -194,7 +206,6 @@ class MainWindow(ttk.Frame):
                               text='September', 
                               justify='center')
         self.setMonth.grid(row=2, column=0, sticky=(E,W))
-
 
 
 # Define main method
