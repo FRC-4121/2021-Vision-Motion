@@ -79,11 +79,13 @@ class FRCNavx:
         self.time = []
         self.date = []
         
-        # Reset Navx
+        # Reset Navx and initialize time
         if self.vmxOpen is True:
             self.vmx.getAHRS().Reset()
             self.vmx.getAHRS().ZeroYaw()
-        
+            self.time = self.vmx.getTime().GetRTCTime()
+            self.date = self.vmx.getTime().GetRTCDate()
+       
 
     # Define Navx thread start method
     def start_navx(self):
@@ -119,8 +121,8 @@ class FRCNavx:
             #self.pitch = round(self.vmx.getAHRS().GetPitch(), 2)
 
             # Read Navx time and date
-            self.time = self.vmx.getTime().GetRTCTime
-            self.date = self.vmx.getTime().GetRTCDate
+            self.time = self.vmx.getTime().GetRTCTime()
+            self.date = self.vmx.getTime().GetRTCDate()
 
             time.sleep(.5)
     
