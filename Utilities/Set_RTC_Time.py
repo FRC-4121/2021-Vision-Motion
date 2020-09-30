@@ -49,6 +49,12 @@ class MainWindow(ttk.Frame):
         self.currentHour = StringVar()
         self.currentMinute = StringVar()
         self.currentSecond = StringVar()
+        self.newMonth = StringVar()
+        self.newDay = StringVar()
+        self.newYear = StringVar()
+        self.newHour = StringVar()
+        self.newMinute = StringVar()
+        self.newSecond = StringVar()
 
         # Set master window
         super().__init__(master)
@@ -56,7 +62,7 @@ class MainWindow(ttk.Frame):
         self.master.title('VMX-pi Real Time Clock Utility')
         self.master.columnconfigure(0, weight=1)
         self.master.rowconfigure(0, weight=1)
-        self.master.geometry('640x480+30+30')
+        self.master.geometry('640x240+30+30')
         self.master.option_add('*tearOff',FALSE)
         self.mastercontent = ttk.PanedWindow(self.master, 
                                              orient=VERTICAL)
@@ -77,12 +83,12 @@ class MainWindow(ttk.Frame):
         self.currentSecond.set(str(self.currentTime[3]))
         
         # Create main areas
-        self.create_current_frame()
-        self.set_time_frame()
+        self.current_time_frame()
+        self.new_time_frame()
 
 
     # Create current date/time area
-    def create_current_frame(self):
+    def current_time_frame(self):
 
         # Create current time frame
         self.currentFrame = ttk.Frame(self.mastercontent, 
@@ -171,7 +177,7 @@ class MainWindow(ttk.Frame):
 
 
     # Define time set frame
-    def set_time_frame(self):
+    def new_time_frame(self):
 
         # Create set time frame
         self.setFrame = ttk.Frame(self.mastercontent, 
@@ -181,9 +187,11 @@ class MainWindow(ttk.Frame):
         self.mastercontent.add(self.setFrame, weight=1)
 
         # Define display grid
-        self.setFrame.rowconfigure(0)
-        self.setFrame.rowconfigure(1)
-        self.setFrame.rowconfigure(2)
+        self.setFrame.rowconfigure(0, weight=1)
+        self.setFrame.rowconfigure(1, weight=1)
+        self.setFrame.rowconfigure(2, weight=1)
+        self.setFrame.rowconfigure(3, weight=1)
+        self.setFrame.rowconfigure(4, weight=1)
         self.setFrame.columnconfigure(0, weight=1)
         self.setFrame.columnconfigure(1, weight=1)
         self.setFrame.columnconfigure(2, weight=1)
@@ -199,13 +207,68 @@ class MainWindow(ttk.Frame):
 
         # Create month input
         self.setMonthLabel = Label(self.setFrame, 
-                                   text='Set Month', 
+                                   text='Month', 
                                    justify='center')
         self.setMonthLabel.grid(row=1, column=0, sticky=(E,W))
-        self.setMonth = Label(self.setFrame, 
-                              text='September', 
-                              justify='center')
-        self.setMonth.grid(row=2, column=0, sticky=(E,W))
+        self.monthEntry = Entry(self.setFrame, 
+								textvariable=self.newMonth)
+        self.monthEntry.grid(row=2, column=0, sticky=(E,W))
+        
+        # Create day input
+        self.setDayLabel = Label(self.setFrame,
+									text='Day',
+									justify='center')
+		self.setDayLabel.grid(row=1,column=1,sticky=(E,W))
+		self.dayEntry = Entry(self.setFrame,
+							  textvariable=self.newDay)
+		self.dayEntry.grid(row=2, column=1, sticky=(E,W))
+		
+		# Create year input
+		self.setYearLabel = Label(self.setFrame,
+								  text='Year',
+								  justify='center')
+		self.setYearLabel.grid(row=1, column=2, sticky=(E,W))
+		self.yearEntry = Entry(self.setFrame,
+							   textvariable=self.newYear)
+		self.yearEntry.grid(row=2, column=2, sticky=(E,W))
+		
+		# Create hour input
+		self.setHourLabel = Label(self.setFrame,
+								  text='Hour',
+								  justify='center')
+		self.setHourLabel.grid(row=1, column=3, sticky=(E,W))
+		self.hourEntry = Entry(self.setFrame,
+							   textvariable=self.newHour)
+		self.hourEntry.grid(row=2, column=3, sticky=(E,W))
+		
+		# Create minute input
+		self.setMinuteLabel = Label(self.setFrame,
+									text='Minute',
+									justify='center')
+		self.setMinuteLabel.grid(row=1, column=4, sticky=(E,W))
+		self.minuteEntry = Entry(self.setFrame,
+								 textvariable=self.newMinute)
+		self.minuteEntry.grid(row=2, column=4, sticky=(E,W))
+		
+		# Create second input
+		self.setSecondLabel = Label(self.setFrame,
+									text='Second',
+									justify='center')
+		self.setSecondLabel.grid(row=1, column=5, sticky=(E,W))
+		self.secondEntry = Entry(self.setFrame,
+								 textvariable=self.newSecond)
+		self.secondEntry.grid(row=2, column=5, sticky=(E,W))
+		
+		# Create set button
+		self.setButton = Button(self.setFrame,
+								text='Set Time',
+								command=self.set_time)
+		self.setButton.grid(row=4, column=5, sticky=(E,W))
+		
+		
+	# Handle button press
+	def set_time(self):
+		
 
 
 # Define main method
