@@ -124,7 +124,7 @@ class FRCNavx:
             self.time = self.vmx.getTime().GetRTCTime()
             self.date = self.vmx.getTime().GetRTCDate()
 
-            time.sleep(.5)
+            time.sleep(.1)
     
 
     # Define read angle method
@@ -179,6 +179,7 @@ class FRCNavx:
 
         success = self.vmx.getTime().SetRTCDate(newdate[0],
                                                 newdate[1],
-                                                newdate[2])
+                                                newdate[2],
+                                                newdate[3])
 
         return success

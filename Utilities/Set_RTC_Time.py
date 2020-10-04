@@ -22,6 +22,7 @@
 import sys
 import os
 import imp
+import time
 
 #Setup paths
 sys.path.append('/home/pi/.local/lib/python3.5/site-packages')
@@ -45,12 +46,14 @@ class MainWindow(ttk.Frame):
 		 # Declare class variables
 		self.currentMonth = StringVar()
 		self.currentDay = StringVar()
+		self.currentDayofWeek = StringVar()
 		self.currentYear = StringVar()
 		self.currentHour = StringVar()
 		self.currentMinute = StringVar()
 		self.currentSecond = StringVar()
 		self.newMonth = StringVar()
 		self.newDay = StringVar()
+		self.newDayofWeek = StringVar()
 		self.newYear = StringVar()
 		self.newHour = StringVar()
 		self.newMinute = StringVar()
@@ -78,6 +81,7 @@ class MainWindow(ttk.Frame):
 		self.currentDate = self.navx.read_date()
 		self.currentMonth.set(str(self.currentDate[3]))
 		self.currentDay.set(str(self.currentDate[2]))
+		self.currentDayofWeek.set(str(self.currentDate[1]))
 		self.currentYear.set(str(2000 + self.currentDate[4]))
 		self.currentHour.set(str(self.currentTime[1]))
 		self.currentMinute.set(str(self.currentTime[2]))
@@ -108,12 +112,13 @@ class MainWindow(ttk.Frame):
 		self.currentFrame.columnconfigure(3, weight=1)
 		self.currentFrame.columnconfigure(4, weight=1)
 		self.currentFrame.columnconfigure(5, weight=1)
+		self.currentFrame.columnconfigure(6, weight=1)
 
 		# Create header
 		self.currHeaderLabel = Label(self.currentFrame, 
 									 text='Current Date / Time', 
 									 justify='center')
-		self.currHeaderLabel.grid(row=0, column=0, columnspan=6)
+		self.currHeaderLabel.grid(row=0, column=0, columnspan=7)
 
 		# Create month display
 		self.currMonthLabel = Label(self.currentFrame, 
@@ -135,46 +140,57 @@ class MainWindow(ttk.Frame):
 							 textvariable=self.currentDay, 
 							 justify='center')
 		self.currDay.grid(row=2, column=1, sticky=(E,W))
+		
+		# Create day of week display
+		self.currDayOWeekLabel = Label(self.currentFrame,
+										text='Day of Week',
+										justify='center')
+		self.currDayOWeekLabel.grid(row=1, column=2, sticky=(E,W))
+		self.currDayOWeek = Label(self.currentFrame,
+									textvariable=self.currentDayofWeek,
+									justify='center')
+		self.currDayOWeek.grid(row=2, column=2, sticky=(E,W))
+		
 
 		# Create year display
 		self.currYearLabel = Label(self.currentFrame, 
 								   text='Year', 
 								   justify='center')
-		self.currYearLabel.grid(row=1, column=2, sticky=(E,W))
+		self.currYearLabel.grid(row=1, column=3, sticky=(E,W))
 		self.currYear = Label(self.currentFrame, 
 							  textvariable=self.currentYear, 
 							  justify='center')
-		self.currYear.grid(row=2, column=2, sticky=(E,W))
+		self.currYear.grid(row=2, column=3, sticky=(E,W))
 
 		# Create hours display
 		self.currHourLabel = Label(self.currentFrame, 
 								   text='Hours', 
 								   justify='center')
-		self.currHourLabel.grid(row=1, column=3, sticky=(E,W))
+		self.currHourLabel.grid(row=1, column=4, sticky=(E,W))
 		self.currHour = Label(self.currentFrame, 
 							  textvariable=self.currentHour, 
 							  justify='center')
-		self.currHour.grid(row=2, column=3, sticky=(E,W))
+		self.currHour.grid(row=2, column=4, sticky=(E,W))
 
 		# Create minutes display
 		self.currMinuteLabel = Label(self.currentFrame, 
 									 text='Minutes', 
 									 justify='center')
-		self.currMinuteLabel.grid(row=1, column=4, sticky=(E,W))
+		self.currMinuteLabel.grid(row=1, column=5, sticky=(E,W))
 		self.currMinute = Label(self.currentFrame, 
 								textvariable=self.currentMinute, 
 								justify='center')
-		self.currMinute.grid(row=2, column=4, sticky=(E,W))
+		self.currMinute.grid(row=2, column=5, sticky=(E,W))
 
 		# Create seconds display
 		self.currSecondLabel = Label(self.currentFrame, 
 									 text='Seconds', 
 									 justify='center')
-		self.currSecondLabel.grid(row=1, column=5, sticky=(E,W))
+		self.currSecondLabel.grid(row=1, column=6, sticky=(E,W))
 		self.currSecond = Label(self.currentFrame, 
 								textvariable=self.currentSecond, 
 								justify='center')
-		self.currSecond.grid(row=2, column=5, sticky=(E,W))
+		self.currSecond.grid(row=2, column=6, sticky=(E,W))
 
 
 	# Define time set frame
@@ -199,12 +215,13 @@ class MainWindow(ttk.Frame):
 		self.setFrame.columnconfigure(3, weight=1)
 		self.setFrame.columnconfigure(4, weight=1)
 		self.setFrame.columnconfigure(5, weight=1)
+		self.setFrame.columnconfigure(6, weight=1)
 
 		# Create header
 		self.setHeaderLabel = Label(self.setFrame, 
 									text='Set Date / Time', 
 									justify='center')
-		self.setHeaderLabel.grid(row=0, column=0, columnspan=6)
+		self.setHeaderLabel.grid(row=0, column=0, columnspan=7)
 
 		# Create month input
 		self.setMonthLabel = Label(self.setFrame, 
@@ -222,53 +239,88 @@ class MainWindow(ttk.Frame):
 							  textvariable=self.newDay)
 		self.dayEntry.grid(row=2, column=1, sticky=(E,W))
 		
+		# Create day of week input
+		self.setDayOWeekLabel = Label(self.setFrame,
+										text='Day of Week',
+										justify='center')
+		self.setDayOWeekLabel.grid(row=1, column=2, sticky=(E,W))
+		self.dayOWeekEntry = Entry(self.setFrame,
+									textvariable=self.newDayofWeek)
+		self.dayOWeekEntry.grid(row=2, column=2, sticky=(E,W))
+		
 		# Create year input
 		self.setYearLabel = Label(self.setFrame,
 								  text='Year',
 								  justify='center')
-		self.setYearLabel.grid(row=1, column=2, sticky=(E,W))
+		self.setYearLabel.grid(row=1, column=3, sticky=(E,W))
 		self.yearEntry = Entry(self.setFrame,
 							   textvariable=self.newYear)
-		self.yearEntry.grid(row=2, column=2, sticky=(E,W))
+		self.yearEntry.grid(row=2, column=3, sticky=(E,W))
 		
 		# Create hour input
 		self.setHourLabel = Label(self.setFrame,
 								  text='Hour',
 								  justify='center')
-		self.setHourLabel.grid(row=1, column=3, sticky=(E,W))
+		self.setHourLabel.grid(row=1, column=4, sticky=(E,W))
 		self.hourEntry = Entry(self.setFrame,
 							   textvariable=self.newHour)
-		self.hourEntry.grid(row=2, column=3, sticky=(E,W))
+		self.hourEntry.grid(row=2, column=4, sticky=(E,W))
 		
 		# Create minute input
 		self.setMinuteLabel = Label(self.setFrame,
 									text='Minute',
 									justify='center')
-		self.setMinuteLabel.grid(row=1, column=4, sticky=(E,W))
+		self.setMinuteLabel.grid(row=1, column=5, sticky=(E,W))
 		self.minuteEntry = Entry(self.setFrame,
 								 textvariable=self.newMinute)
-		self.minuteEntry.grid(row=2, column=4, sticky=(E,W))
+		self.minuteEntry.grid(row=2, column=5, sticky=(E,W))
 		
 		# Create second input
 		self.setSecondLabel = Label(self.setFrame,
 									text='Second',
 									justify='center')
-		self.setSecondLabel.grid(row=1, column=5, sticky=(E,W))
+		self.setSecondLabel.grid(row=1, column=6, sticky=(E,W))
 		self.secondEntry = Entry(self.setFrame,
 								 textvariable=self.newSecond)
-		self.secondEntry.grid(row=2, column=5, sticky=(E,W))
+		self.secondEntry.grid(row=2, column=6, sticky=(E,W))
 		
 		# Create set button
 		self.setButton = Button(self.setFrame,
 								text='Set Time',
-								command=self.set_time)
-		self.setButton.grid(row=4, column=5, sticky=(E,W))
+								command=self.set_time_button_press)
+		self.setButton.grid(row=4, column=6, sticky=(E,W))
 		
 		
 	# Handle button press
-	def set_time(self):
+	def set_time_button_press(self):
 		
-		return
+		# Create new date and time arrays
+		new_time = [int(self.newHour.get()),
+					int(self.newMinute.get()),
+					int(self.newSecond.get())]
+		new_date = [int(self.newDayofWeek.get()),
+					int(self.newDay.get()),
+					int(self.newMonth.get()),				
+					int(self.newYear.get())-2000]
+		
+		# Call library methods to set new date and time
+		restime = self.navx.set_time(new_time)
+		date_success = self.navx.set_date(new_date)
+		
+		# Wait for NAVX update
+		time.sleep(0.2)
+		
+		# Read back in new date and time
+		self.currentTime = self.navx.read_time()
+		self.currentDate = self.navx.read_date()
+		self.currentMonth.set(str(self.currentDate[3]))
+		self.currentDay.set(str(self.currentDate[2]))
+		self.currentDayofWeek.set(str(self.currentDate[1]))
+		self.currentYear.set(str(2000 + self.currentDate[4]))
+		self.currentHour.set(str(self.currentTime[1]))
+		self.currentMinute.set(str(self.currentTime[2]))
+		self.currentSecond.set(str(self.currentTime[3]))
+		
 
 
 # Define main method
