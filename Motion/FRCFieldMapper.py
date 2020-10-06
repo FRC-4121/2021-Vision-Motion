@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#---------------------------------------------------------------------------
+#-----------------------------------------------------------------------
 #
 # FRC Game Field Mapper
 #
@@ -10,10 +10,13 @@
 # of the field to represent the hard edge walls of the field as well as 
 # potential scoring locations. In code, the field is represented as an 
 # (M+2) x (N+2) NUMPY array. The size of the field as well as the 
-# physical size of each square are read in from a text file.
+# physical size of each square are read in from a text file.  In this
+# class, the size of the game field is referred to as LENGTH (M) and
+# WIDTH (N).  The size of each grid sqaure is referred to as the
+# SCALEFACTOR, which has units of inches.
 # 
 # The field obstacles, loading, and scoring locations are read in from 
-# a separate text file so the map can be customized for each year's game.
+# a separate text file so the map can be customized for each game.
 #
 # The position of field/game elements are represented by integers
 # in the array.  The standard integers used every year are:
@@ -41,7 +44,7 @@
 #
 # @Author: Team 4121
 #
-#---------------------------------------------------------------------------
+#-----------------------------------------------------------------------
 
 '''FRC Field Mapper - Provides tracking of robot on game field'''
 
@@ -83,7 +86,8 @@ class FrcFieldMapper:
         #Setup NUMPY array field representation
         fieldWidth = int(self.fieldValues["WIDTH"]) + 2
         fieldLength = int(self.fieldValues["LENGTH"]) + 2
-        self.fieldMap = np.zeros(((fieldWidth + 2),(fieldLength + 2)), dtype=int)
+        self.fieldMap = np.zeros(((fieldWidth + 2),(fieldLength + 2)),
+									dtype=int)
        
 
     #Initialize game elements
@@ -98,7 +102,9 @@ class FrcFieldMapper:
         self.fieldMap[widthEdge,0:lengthEdge] = -1
 
         #Load current game field elements
-        fieldData = np.loadtxt(FrcFieldMapper.gameElementsFile, dtype=int, delimiter=',')
+        fieldData = np.loadtxt(FrcFieldMapper.gameElementsFile,
+								dtype=int,
+								delimiter=',')
 
         #Apply data to game field
         for x,y,h in fieldData:

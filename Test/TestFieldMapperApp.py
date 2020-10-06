@@ -62,7 +62,7 @@ im1 = ax1.imshow(fieldData.fieldMap, cmap=newcmp, vmin=-1, vmax=9)
 #fig.colorbar(cm.ScalarMappable(norm=None, cmap=newcmp), ax=ax1)
 
 #Update the robot's position on the field
-fieldData.UpdatePosition(48, 48, 45)
+fieldData.UpdatePosition(48, 45)
 
 #Plot the new position with labels and defined colors
 im2 = ax2.imshow(fieldData.fieldMap, cmap=newcmp, vmin=-1, vmax=9)
