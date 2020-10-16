@@ -74,8 +74,7 @@ visionFile = '/home/pi/Team4121/Config/2020VisionSettings.txt'
 cameraValues={}
 
 #Define program control flags
-videoTesting = False
-
+videoTesting = True
 
 #Read vision settings file
 def read_settings_file():
@@ -179,8 +178,8 @@ def main():
 
     #Create ball camera stream
     ballCamSettings = {}
-    ballCamSettings['Width'] = cameraValues['BallCamWidth']
-    ballCamSettings['Height'] = cameraValues['BallCamHeight']
+    ballCamSettings['Width'] = int(cameraValues['BallCamWidth'])
+    ballCamSettings['Height'] = int(cameraValues['BallCamHeight'])
     ballCamSettings['Brightness'] = cameraValues['BallCamBrightness']
     ballCamSettings['Exposure'] = cameraValues['BallCamExposure']
     ballCamSettings['FPS'] = cameraValues['BallCamFPS']
@@ -287,9 +286,9 @@ def main():
 
         #Check for gyro re-zero
         gyroInit = navxTable.getNumber("ZeroGyro", 0)
-##        if gyroInit == 1:
-##            navx.reset_gyro()
-##            navxTable.putNumber("ZeroGyro", 0)
+    #    if gyroInit == 1:
+    #        navx.reset_gyro()
+    #        navxTable.putNumber("ZeroGyro", 0)
         
         #Check for stop code from robot or keyboard (for testing)
         if videoTesting == True:
@@ -315,6 +314,8 @@ def main():
     #navx.stop_navx()
     
     #Close the log file
+    #        navx.reset_gyro()
+    #        navxTable.put
     log_file.write('Run stopped on %s.' % datetime.datetime.now())
     log_file.close()
 

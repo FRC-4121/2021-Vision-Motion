@@ -52,7 +52,7 @@ class FRCWebCam:
             self.camStream.open(self.device_id)
 
         # Initialize blank frames
-        self.frame = np.zeros(shape=(settings['Width'], settings['Height'], 3), dtype=np.uint8)
+        self.frame = np.zeros(shape=(int(settings['Width']), int(settings['Height']), 3), dtype=np.uint8)
 
         # Grab an initial frame
         (self.grabbed, self.frame) = self.camStream.read()
@@ -64,8 +64,8 @@ class FRCWebCam:
         self.stopped = False
 
         # Read camera calibration files
-        cam_matrix_file = calibration_dir + '/Camera_Matrix_Cam' + str(self.left_id) + '.txt'
-        cam_coeffs_file = calibration_dir + '/Distortion_Coeffs_Cam' + str(self.left_id) + '.txt'
+        cam_matrix_file = calibration_dir + '/Camera_Matrix_Cam' + str(self.device_id) + '.txt'
+        cam_coeffs_file = calibration_dir + '/Distortion_Coeffs_Cam' + str(self.device_id) + '.txt'
         if os.path.isfile(cam_matrix_file) == True and os.path.isfile(cam_coeffs_file) == True:
             self.cam_matrix = np.loadtxt(cam_matrix_file)
             self.distort_coeffs = np.loadtxt(cam_coeffs_file)
