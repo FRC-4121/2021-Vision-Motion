@@ -24,8 +24,8 @@ import os
 import imp
 
 # Setup paths for PI use
-sys.path.append('/usr/local/lib/python3.5/dist-packages')
-sys.path.append('/home/pi/.local/lib/python3.5/site-packages')
+sys.path.append('/usr/local/lib/python3.7/dist-packages')
+sys.path.append('/home/pi/.local/lib/python3.7/site-packages')
 sys.path.append('/home/pi/Team4121/Libraries')
 
 # Setup paths for Windows use

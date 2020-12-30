@@ -49,9 +49,9 @@ class FRCStereoCam:
 
         # Read left camera calibrarion files
         left_matrix_file = (calibration_dir + '/Camera_Matrix_Cam' + 
-                                str(self.left_id) + '.txt')
+                                str(leftSrc) + '.txt')
         left_coeffs_file = (calibration_dir + '/Distortion_Coeffs_Cam' + 
-                                str(self.left_id) + '.txt')
+                                str(leftSrc) + '.txt')
         if (os.path.isfile(left_matrix_file) == True and 
           os.path.isfile(left_coeffs_file) == True):
             self.left_cam_matrix = np.loadtxt(left_matrix_file)
@@ -60,9 +60,9 @@ class FRCStereoCam:
        
         # Read right camera calibration files
         right_matrix_file = (calibration_dir + '/Camera_Matrix_Cam' + 
-                                str(self.right_id) + '.txt')
+                                str(rightSrc) + '.txt')
         right_coeffs_file = (calibration_dir + '/Distortion_Coeffs_Cam' + 
-                                str(self.right_id) + '.txt')
+                                str(rightSrc) + '.txt')
         if (os.path.isfile(right_matrix_file) == True and 
           os.path.isfile(right_coeffs_file) == True):
             self.right_cam_matrix = np.loadtxt(right_matrix_file)
