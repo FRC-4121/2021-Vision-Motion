@@ -82,6 +82,8 @@ def read_settings_file():
 
     except:
 
+        print('Using default camera values')
+
         cameraValues['BallCamFOV'] = 27.3
         cameraValues['BallCamWidth'] = 320
         cameraValues['BallCamHeight'] = 240
