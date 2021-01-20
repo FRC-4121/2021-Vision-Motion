@@ -166,7 +166,17 @@ class VisionLibrary:
 
         # Only proceed if at least one contour was found
         if len(ballContours) > 0:
- 
+
+            #Draw every sufficiently large contour
+            for contour in ballContours:
+
+                ((x, y), radius) = cv.minEnclosingCircle(contour)
+
+                if radius > int(VisionLibrary.ball_values['MINRADIUS']):
+                    cv.circle(imgRaw, (int(x), int(y)), int(radius), (0, 255, 0), 2)
+                    cv.putText(imgRaw, '%.2f, %.2f, %.2f' %(int(x), int(y), radius), (int(x + (radius + 10)), int(y + radius)), cv.FONT_HERSHEY_SIMPLEX, .5, (0, 255, 0), 2)  
+
+            #then find the actual largest one!
             largestContour = max(ballContours, key=cv.contourArea)
             ((x, y), radius) = cv.minEnclosingCircle(largestContour)
 

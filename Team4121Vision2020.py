@@ -2,9 +2,9 @@
 #                               North Canton Hoover High School                                #
 #                                                                                              #
 #                                Team 4121 - Norsemen Robotics                                 #
-#                                                                                              #
+#                                                                                            #
 #                               Vision & Motion Processing Code                                #
-#----------------------------------------------------------------------------------------------#
+#------------------------------cd ----------------------------------------------------------------#
 #                                                                                              #
 #  This code continuously analyzes images from one or more USB cameras to identify on field    #
 #  game pieces and vision targets.  For game pieces, the code will identify all game pieces    #
@@ -63,7 +63,7 @@ from time import sleep
 #Team 4121 module imports
 from FRCVisionLibrary import VisionLibrary
 from FRCCameraLibrary import FRCWebCam
-from FRCNavxLibrary import FRCNavx
+#from FRCNavxLibrary import FRCNavx
 
 #Set up basic logging
 logging.basicConfig(level=logging.DEBUG)
@@ -108,9 +108,9 @@ def read_settings_file():
 
         print('Using default camera values')
         
-        cameraValues['BallCamFOV'] = 27.3
-        cameraValues['BallCamWidth'] = 320
-        cameraValues['BallCamHeight'] = 240
+        cameraValues['BallCamFOV'] = 22.5
+        cameraValues['BallCamWidth'] = 960
+        cameraValues['BallCamHeight'] = 720
         cameraValues['BallCamFPS'] = 15
         cameraValues['BallCamBrightness'] = 0.30
         cameraValues['BallCamExposure'] = 30
@@ -183,18 +183,18 @@ def main():
     ballCamSettings['Brightness'] = cameraValues['BallCamBrightness']
     ballCamSettings['Exposure'] = cameraValues['BallCamExposure']
     ballCamSettings['FPS'] = cameraValues['BallCamFPS']
-    ballCamera = FRCWebCam('/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.5:1.0-video-index0', "BallCam", ballCamSettings)
+    ballCamera = FRCWebCam('/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.4:1.0-video-index0', "BallCam", ballCamSettings)
     ballCamera.start_camera()
 
     #Create goal camera stream
-    goalCamSettings = {}
-    goalCamSettings['Width'] = cameraValues['GoalCamWidth']
-    goalCamSettings['Height'] = cameraValues['GoalCamHeight']
-    goalCamSettings['Brightness'] = cameraValues['GoalCamBrightness']
-    goalCamSettings['Exposure'] = cameraValues['GoalCamExposure']
-    goalCamSettings['FPS'] = cameraValues['GoalCamFPS']
-    goalCamera = FRCWebCam('/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.4:1.0-video-index0', "GoalCam", goalCamSettings)
-    goalCamera.start_camera()
+##    goalCamSettings = {}
+##    goalCamSettings['Width'] = cameraValues['GoalCamWidth']
+##    goalCamSettings['Height'] = cameraValues['GoalCamHeight']
+##    goalCamSettings['Brightness'] = cameraValues['GoalCamBrightness']
+##    goalCamSettings['Exposure'] = cameraValues['GoalCamExposure']
+##    goalCamSettings['FPS'] = cameraValues['GoalCamFPS']
+##    goalCamera = FRCWebCam('/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.4:1.0-video-index0', "GoalCam", goalCamSettings)
+##    goalCamera.start_camera()
 
     #Create vision processing
     visionProcessor = VisionLibrary(visionFile)
@@ -216,7 +216,7 @@ def main():
 
         #Read frames from cameras
         imgBallRaw = ballCamera.read_frame()
-        imgGoalRaw = goalCamera.read_frame()
+#        imgGoalRaw = goalCamera.read_frame()
         imgBlankRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
 
         #Read gyro angle
@@ -226,12 +226,29 @@ def main():
         ballX, ballY, ballRadius, ballDistance, ballAngle, ballOffset, ballScreenPercent, foundBall = visionProcessor.detect_game_balls(imgBallRaw, int(cameraValues['BallCamWidth']),
                                                                                                                                                     int(cameraValues['BallCamHeight']),
                                                                                                                                                     float(cameraValues['BallCamFOV']))
-        tapeCameraValues, tapeRealWorldValues, foundTape, tapeTargetLock, rect, box = visionProcessor.detect_tape_rectangle(imgGoalRaw, int(cameraValues['GoalCamWidth']),
-                                                                                                                        int(cameraValues['GoalCamHeight']),
-                                                                                                                        float(cameraValues['GoalCamFOV']),
-                                                                                                                        float(cameraValues['GoalCamFocalLength']),
-                                                                                                                        float(cameraValues['GoalCamMountAngle']),
-                                                                                                                        float(cameraValues['GoalCamMountHeight']))
+        ballWidthPercent = (ballX / float(cameraValues['BallCamWidth']))
+        currentPath = "null"
+        #Blue 1 
+        if (ballWidthPercent > 0.9) and (ballWidthPercent < 0.95):
+            currentPath = "blue1"
+        #Red1
+        elif (ballWidthPercent > 0.4) and (ballWidthPercent < 0.6):
+            currentPath = "red1"
+        #Blue 2
+        elif (ballWidthPercent > 0.68) and (ballWidthPercent < 0.72):
+            currentPath = "blue2"
+        #Red 2
+        elif (ballWidthPercent > 0) and (ballWidthPercent < 0.05):
+            currentPath = "red2"
+        print(currentPath)
+
+        
+##        tapeCameraValues, tapeRealWorldValues, foundTape, tapeTargetLock, rect, box = visionProcessor.detect_tape_rectangle(imgGoalRaw, int(cameraValues['GoalCamWidth']),
+##                                                                                                                        int(cameraValues['GoalCamHeight']),
+##                                                                                                                        float(cameraValues['GoalCamFOV']),
+##                                                                                                                        float(cameraValues['GoalCamFocalLength']),
+##                                                                                                                        float(cameraValues['GoalCamMountAngle']),
+##                                                                                                                        float(cameraValues['GoalCamMountHeight']))
 
         #cv.putText(imgBlankRaw, 'Gyro: %.2f' %gyroAngle, (10, 110), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
 
@@ -281,8 +298,8 @@ def main():
         #Display the vision camera stream (for testing only)
         if videoTesting == True:
             cv.imshow("Ball", imgBallRaw)
-            cv.imshow("Goal", imgGoalNew)
-            cv.imshow("Data", imgBlankRaw)
+#            cv.imshow("Goal", imgGoalNew)
+#            cv.imshow("Data", imgBlankRaw)
 
         #Check for gyro re-zero
         gyroInit = navxTable.getNumber("ZeroGyro", 0)
@@ -295,9 +312,9 @@ def main():
             if cv.waitKey(1) == 27:
                 break
             
-        robotStop = visionTable.getNumber("RobotStop", 0)
-        if (robotStop == 1) or (networkTablesConnected == False):
-            break
+##        robotStop = visionTable.getNumber("RobotStop", 0)
+##        if (robotStop == 1) or (networkTablesConnected == False):
+##            break
 
         #Pause before next analysis
         time.sleep(0.066) #should give ~15 FPS
@@ -308,7 +325,7 @@ def main():
 
     #Release camera resources
     ballCamera.release_cam()
-    goalCamera.release_cam()
+#    goalCamera.release_cam()
 
     #Release Navx resource
     #navx.stop_navx()

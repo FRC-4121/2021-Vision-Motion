@@ -65,8 +65,8 @@ def main():
 
     # Setup webcam capture
     camera = cv2.VideoCapture(0)
-    camera.set(10, 0)  # Brightness
-    camera.set(15, 0)  # Exposure
+    camera.set(10, 0.3)  # Brightness
+    camera.set(15, 30)  # Exposure
 
     # Create trackbar window
     setup_trackbars(range_filter)
