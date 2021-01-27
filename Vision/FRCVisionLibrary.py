@@ -151,15 +151,13 @@ class VisionLibrary:
         ballHSVMin = (hMin, sMin, vMin)
         ballHSVMax = (hMax, sMax, vMax)
         
-        # Initialize values to be returned
-        targetRadius = 0 #px
-        targetX = -1 #px
-        targetY = -1 #px
+        # Initialize variables
         distanceToBall = 0 #inches
         angleToBall = 0 #degrees
         ballOffset = 0
         screenPercent = 0
-        foundBall = False
+        ballsFound = 0
+        ballData = [[0,0,0,0,0,0,0]]
 
         # Find contours in the mask and clean up the return style from OpenCV
         ballContours = self.process_image_contours(imgRaw, ballHSVMin, ballHSVMax)
@@ -167,42 +165,47 @@ class VisionLibrary:
         # Only proceed if at least one contour was found
         if len(ballContours) > 0:
 
-            #Draw every sufficiently large contour
-            for contour in ballContours:
+            #Create a ball data matrix
+            ballData = [[0] * 7 for i in range(len(ballContours))]
 
+            #Sort contours by area
+            sortedContours = sorted(ballContours, key=cv.contourArea, reverse=True)
+
+            #Process each contour
+            for contour in sortedContours:
+
+                #Find enclosing circle
                 ((x, y), radius) = cv.minEnclosingCircle(contour)
 
+                #Proceed if circle meets minimum radius requirement
                 if radius > int(VisionLibrary.ball_values['MINRADIUS']):
-                    cv.circle(imgRaw, (int(x), int(y)), int(radius), (0, 255, 0), 2)
-                    cv.putText(imgRaw, '%.2f, %.2f, %.2f' %(int(x), int(y), radius), (int(x + (radius + 10)), int(y + radius)), cv.FONT_HERSHEY_SIMPLEX, .5, (0, 255, 0), 2)  
-
-            #then find the actual largest one!
-            largestContour = max(ballContours, key=cv.contourArea)
-            ((x, y), radius) = cv.minEnclosingCircle(largestContour)
-
-            if radius > int(VisionLibrary.ball_values['MINRADIUS']):
-
-                targetRadius = radius
-                targetX = x
-                targetY = y
-                foundBall = True
-
-            # Distance and angle offset calculations
-            if targetRadius > 0:
             
-                inches_per_pixel = float(VisionLibrary.ball_values['RADIUS'])/targetRadius #set up a general conversion factor
-                distanceToBall = inches_per_pixel * (cameraWidth / (2 * math.tan(math.radians(cameraFOV))))
-                offsetInInches = inches_per_pixel * (targetX - cameraWidth / 2)
-                angleToBall = math.degrees(math.atan((offsetInInches / distanceToBall)))
-                screenPercent = math.pi * targetRadius * targetRadius / (cameraWidth * cameraHeight)
-                ballOffset = -offsetInInches
-          
-            else:
-            
-                distanceToBall = -1
-                angleToBall = -1
+                    #Calculate ball metrics
+                    inches_per_pixel = float(VisionLibrary.ball_values['RADIUS'])/radius #set up a general conversion factor
+                    distanceToBall = inches_per_pixel * (cameraWidth / (2 * math.tan(math.radians(cameraFOV))))
+                    offsetInInches = inches_per_pixel * (x - cameraWidth / 2)
+                    angleToBall = math.degrees(math.atan((offsetInInches / distanceToBall)))
+                    screenPercent = math.pi * radius * radius / (cameraWidth * cameraHeight)
+                    ballOffset = -offsetInInches
 
-        return targetX, targetY, targetRadius, distanceToBall, angleToBall, ballOffset, screenPercent, foundBall
+                    #Save value to output matrix
+                    ballData[ballsFound][0] = x
+                    ballData[ballsFound][1] = y
+                    ballData[ballsFound][2] = radius
+                    ballData[ballsFound][3] = distanceToBall
+                    ballData[ballsFound][4] = angleToBall
+                    ballData[ballsFound][5] = ballOffset
+                    ballData[ballsFound][6] = screenPercent
+
+                    #Increment ball count
+                    ballsFound = ballsFound + 1
+        
+                else:
+
+                    #No contours meet criteria so break loop
+                    break
+                
+        return ballsFound, ballData
 
 
     # Define general tape detection method (rectangle good for generic vision tape targets)
