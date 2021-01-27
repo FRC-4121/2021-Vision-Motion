@@ -266,8 +266,7 @@ def main():
         ballsFound, ballData = visionProcessor.detect_game_balls(imgBallRaw, int(cameraValues['BallCamWidth']),
                                                                                                                                                     int(cameraValues['BallCamHeight']),
                                                                                                                                                     float(cameraValues['BallCamFOV']))
-
-        
+       
 ##        tapeCameraValues, tapeRealWorldValues, foundTape, tapeTargetLock, rect, box = visionProcessor.detect_tape_rectangle(imgGoalRaw, int(cameraValues['GoalCamWidth']),
 ##                                                                                                                        int(cameraValues['GoalCamHeight']),
 ##                                                                                                                        float(cameraValues['GoalCamFOV']),
@@ -277,6 +276,9 @@ def main():
 
         #cv.putText(imgBlankRaw, 'Gyro: %.2f' %gyroAngle, (10, 110), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
 
+        #Detect ball pattern
+        ballPatternNumber, ballPatternName = determineBallPattern(1, ballData[0]['x'], ballData[0]['distance'], ballData[0]['angle'])
+        
         #Draw ball contours and target data on the image
         if ballsFound > 0:
 
