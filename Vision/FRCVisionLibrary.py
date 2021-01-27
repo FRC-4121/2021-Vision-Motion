@@ -157,7 +157,7 @@ class VisionLibrary:
         ballOffset = 0
         screenPercent = 0
         ballsFound = 0
-        ballData = [[0,0,0,0,0,0,0]]
+        ballData = []
 
         # Find contours in the mask and clean up the return style from OpenCV
         ballContours = self.process_image_contours(imgRaw, ballHSVMin, ballHSVMax)
@@ -165,10 +165,7 @@ class VisionLibrary:
         # Only proceed if at least one contour was found
         if len(ballContours) > 0:
 
-            #Create a ball data matrix
-            ballData = [[0] * 7 for i in range(len(ballContours))]
-
-            #Sort contours by area
+            #Sort contours by area (reverse order so largest is first)
             sortedContours = sorted(ballContours, key=cv.contourArea, reverse=True)
 
             #Process each contour
@@ -188,23 +185,27 @@ class VisionLibrary:
                     screenPercent = math.pi * radius * radius / (cameraWidth * cameraHeight)
                     ballOffset = -offsetInInches
 
-                    #Save value to output matrix
-                    ballData[ballsFound][0] = x
-                    ballData[ballsFound][1] = y
-                    ballData[ballsFound][2] = radius
-                    ballData[ballsFound][3] = distanceToBall
-                    ballData[ballsFound][4] = angleToBall
-                    ballData[ballsFound][5] = ballOffset
-                    ballData[ballsFound][6] = screenPercent
+                    #Save values to dictionary
+                    ballDataDict = {}
+                    ballDataDict['x'] = x
+                    ballDataDict['y'] = y
+                    ballDataDict['radius'] = radius
+                    ballDataDict['distance'] = distanceToBall
+                    ballDataDict['angle'] = angleToBall
+                    ballDataDict['offset'] = ballOffset
+                    ballDataDict['percent'] = screenPercent
+
+                    #Add dictionary to return list
+                    ballData.append(ballDataDict)
 
                     #Increment ball count
                     ballsFound = ballsFound + 1
         
                 else:
 
-                    #No contours meet criteria so break loop
+                    #No more contours meet criteria so break loop
                     break
-                
+
         return ballsFound, ballData
 
 

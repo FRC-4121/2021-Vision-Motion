@@ -130,6 +130,46 @@ def read_settings_file():
         cameraValues['GoalCamMountHeight'] = 26.0
 
 
+#Define ball layout detection function
+def determineBallPattern(method, ballX, ballDistance, ballAngle):
+
+    #Initialize return value
+    ballPattern = -1
+    ballPatternName = 'none'
+
+    #Run selected method
+    if method == 1:
+
+        ballWidthPercent = (ballX / float(cameraValues['BallCamWidth']))
+
+        #Blue 1 
+        if (ballWidthPercent > 0.9) and (ballWidthPercent < 0.95):
+            ballPattern = 1
+            ballPatternName = "blue1"
+        #Red1
+        elif (ballWidthPercent > 0.4) and (ballWidthPercent < 0.6):
+            ballPattern = 2
+            ballPatternName = "red1"
+        #Blue 2
+        elif (ballWidthPercent > 0.68) and (ballWidthPercent < 0.72):
+            ballPattern = 3
+            ballPatternName = "blue2"
+        #Red 2
+        elif (ballWidthPercent > 0) and (ballWidthPercent < 0.05):
+            ballPattern = 4
+            ballPatternName = "red2"
+
+    else:
+
+        #Blue 1
+        if ((ballDistance > 0) and (ballDistance < 10)) and ((ballAngle > 0) and (ballAngle < 10)):
+            ballPattern = 1
+            ballPatternName = 'blue1'
+ 
+    #Return values
+    return ballPattern, ballPatternName
+
+
 #Define main processing function
 def main():
 
@@ -223,24 +263,9 @@ def main():
         #gyroAngle = navx.read_angle()
         
         #Call detection methods
-        ballX, ballY, ballRadius, ballDistance, ballAngle, ballOffset, ballScreenPercent, foundBall = visionProcessor.detect_game_balls(imgBallRaw, int(cameraValues['BallCamWidth']),
+        ballsFound, ballData = visionProcessor.detect_game_balls(imgBallRaw, int(cameraValues['BallCamWidth']),
                                                                                                                                                     int(cameraValues['BallCamHeight']),
                                                                                                                                                     float(cameraValues['BallCamFOV']))
-        ballWidthPercent = (ballX / float(cameraValues['BallCamWidth']))
-        currentPath = "null"
-        #Blue 1 
-        if (ballWidthPercent > 0.9) and (ballWidthPercent < 0.95):
-            currentPath = "blue1"
-        #Red1
-        elif (ballWidthPercent > 0.4) and (ballWidthPercent < 0.6):
-            currentPath = "red1"
-        #Blue 2
-        elif (ballWidthPercent > 0.68) and (ballWidthPercent < 0.72):
-            currentPath = "blue2"
-        #Red 2
-        elif (ballWidthPercent > 0) and (ballWidthPercent < 0.05):
-            currentPath = "red2"
-        print(currentPath)
 
         
 ##        tapeCameraValues, tapeRealWorldValues, foundTape, tapeTargetLock, rect, box = visionProcessor.detect_tape_rectangle(imgGoalRaw, int(cameraValues['GoalCamWidth']),
@@ -252,14 +277,28 @@ def main():
 
         #cv.putText(imgBlankRaw, 'Gyro: %.2f' %gyroAngle, (10, 110), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
 
-        #Draw various contours on the image
-        if foundBall == True:
-            imgBallNew = imgBallRaw
-            cv.circle(imgBallNew, (int(ballX), int(ballY)), int(ballRadius), (0, 0, 255), 2) #ball
-            cv.putText(imgBallNew, 'Distance to Ball: %.2f' %ballDistance, (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-            cv.putText(imgBallNew, 'Angle to Ball: %.2f' %ballAngle, (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-            cv.putText(imgBallNew, 'Radius: %.2f' %ballRadius, (10, 45), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+        #Draw ball contours and target data on the image
+        if ballsFound > 0:
 
+            #Copy raw image
+            imgBallNew = imgBallRaw
+
+            #Loop over all contours and annotate image
+            for i in range(0, ballsFound-1):
+
+                if i == 0:
+
+                    cv.circle(imgBallNew, (int(ballData[i]['x']), int(ballData[i]['y'])), int(ballData[i]['radius']), (0, 0, 255), 2)
+                    cv.putText(imgBallNew, 'Distance to Ball: %.2f' %ballData[i]['distance'], (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                    cv.putText(imgBallNew, 'Angle to Ball: %.2f' %ballData[i]['angle'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                    cv.putText(imgBallNew, 'Radius: %.2f' %ballData[i]['radius'], (10, 45), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+
+                else:
+
+                    cv.circle(imgBallNew, (int(ballData[i]['x']), int(ballData[i]['y'])), int(ballData[i]['radius']), (0, 255, 0), 2)
+
+
+        #Draw vision tape contours and target data on the image
         if foundTape == True:
             imgGoalNew = imgGoalRaw
             if tapeTargetLock:
