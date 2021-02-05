@@ -34,6 +34,7 @@ class VisionLibrary:
     ball_values = {}
     goal_values = {}
     tape_values = {}
+    marker_values = {}
 
 
     # Define class initialization
@@ -79,6 +80,8 @@ class VisionLibrary:
                 elif split_line[0].upper() == 'VISIONTAPE:':
                     value_section = 'VISIONTAPE'
                     new_section = True
+                elif split_line[0].upper() == 'MARKER:':
+                    value_section = 'MARKER'
                 elif split_line[0] == '':
                     value_section = ''
                     new_section = True
@@ -93,6 +96,8 @@ class VisionLibrary:
                         VisionLibrary.goal_values[split_line[0].upper()] = split_line[1]
                     elif value_section == 'VISIONTAPE':
                         VisionLibrary.tape_values[split_line[0].upper()] = split_line[1]
+                    elif value_section == 'MARKER':
+                        VisionLibrary.marker_values[split_line[0].upper()] = split_line[1]
                     else:
                         new_section = True
         
@@ -179,9 +184,10 @@ class VisionLibrary:
             
                     #Calculate ball metrics
                     inches_per_pixel = float(VisionLibrary.ball_values['RADIUS'])/radius #set up a general conversion factor
-                    distanceToBall = inches_per_pixel * (cameraWidth / (2 * math.tan(math.radians(cameraFOV))))
+                    distanceToTargetPlane = inches_per_pixel * (cameraWidth / (2 * math.tan(math.radians(cameraFOV))))
                     offsetInInches = inches_per_pixel * (x - cameraWidth / 2)
-                    angleToBall = math.degrees(math.atan((offsetInInches / distanceToBall)))
+                    angleToBall = math.degrees(math.atan((offsetInInches / distanceToTargetPlane)))
+                    distanceToBall = math.cos(math.radians(angleToBall)) * distanceToTargetPlane
                     screenPercent = math.pi * radius * radius / (cameraWidth * cameraHeight)
                     ballOffset = -offsetInInches
 
@@ -207,6 +213,92 @@ class VisionLibrary:
                     break
 
         return ballsFound, ballData
+
+    
+    #find game field markers
+    def detect_field_marker(self, imgRaw, cameraWidth, cameraHeight, cameraFOV):
+        
+        # Read HSV values from dictionary and make tuples
+        hMin = int(VisionLibrary.marker_values['HMIN'])
+        hMax = int(VisionLibrary.marker_values['HMAX'])
+        sMin = int(VisionLibrary.marker_values['SMIN'])
+        sMax = int(VisionLibrary.marker_values['SMAX'])
+        vMin = int(VisionLibrary.marker_values['VMIN'])
+        vMax = int(VisionLibrary.marker_values['VMAX'])
+        markerHSVMin = (hMin, sMin, vMin)
+        markerHSVMax = (hMax, sMax, vMax)
+
+         # Initialize values to be returned
+        markerArea = 0 #px
+        markerX = -1 #px
+        markerY = -1 #px
+        markerW = 0
+        markerH = 0
+        distanceToMarker = 0 #inches
+        angleToMarker = 0 #degrees
+        screenPercent = 0
+        markersFound = 0
+        markerData = []
+
+        # Calculate Ratio TOL
+        ratioMax = float(VisionLibrary.marker_values['TARGETRATIO']) + float(VisionLibrary.marker_values['RATIOTOL'])
+        ratioMin = float(VisionLibrary.marker_values['TARGETRATIO']) - float(VisionLibrary.marker_values['RATIOTOL'])
+        
+        #finding marker contours
+        markerContours = self.process_image_contours(imgRaw, markerHSVMin, markerHSVMax)
+
+        # Only proceed if at least one contour was found
+        if len(markerContours) > 0:
+
+            #Sort contours by area (reverse order so largest is first)
+            sortedContours = sorted(markerContours, key=cv.contourArea, reverse=True)
+
+            #Process each contour
+            for contour in sortedContours:
+
+                # Find bounding rectangle
+                markerX, markerY, markerW, markerH = cv.boundingRect(contour)
+
+                # Check area
+                area = (markerW * markerH)
+                if area > int(VisionLibrary.marker_values['MINAREA']):
+
+                    # Check for ratio
+                    #if ((markerH / markerW) > ratioMin) and ((markerH / markerW) < ratioMax):
+
+                    # Marker distance calculations
+                    inches_per_pixel = float(VisionLibrary.marker_values['HEIGHT'])/markerH #set up a general conversion factor
+                    distanceToTargetPlane = inches_per_pixel * (cameraWidth / (2 * math.tan(math.radians(cameraFOV))))
+                    offsetInInches = inches_per_pixel * (markerX - cameraWidth / 2)
+                    angleToMarker = math.degrees(math.atan((offsetInInches / distanceToTargetPlane)))
+                    distanceToMarker = math.cos(math.radians(angleToMarker)) * distanceToTargetPlane
+                    screenPercent = area / (cameraWidth * cameraHeight)
+                    markerOffset = -offsetInInches
+
+                    #Save values to dictionary
+                    markerDataDict = {}
+                    markerDataDict['x'] = markerX
+                    markerDataDict['y'] = markerY
+                    markerDataDict['w'] = markerW
+                    markerDataDict['h'] = markerH
+                    markerDataDict['distance'] = distanceToMarker
+                    markerDataDict['angle'] = angleToMarker
+                    markerDataDict['offset'] = markerOffset
+                    markerDataDict['percent'] = screenPercent
+
+                    #Add dictionary to return list
+                    markerData.append(markerDataDict)
+
+                    #Increment ball count
+                    markersFound = markersFound + 1
+                        
+                else:
+
+                    #No more contours meet criteria so break loop
+                    break
+
+        return markersFound, markerData
+       
 
 
     # Define general tape detection method (rectangle good for generic vision tape targets)

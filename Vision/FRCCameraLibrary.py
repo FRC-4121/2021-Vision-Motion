@@ -55,7 +55,7 @@ class FRCWebCam:
         self.frame = np.zeros(shape=(int(settings['Width']), int(settings['Height']), 3), dtype=np.uint8)
 
         # Grab an initial frame
-        (self.grabbed, self.frame) = self.camStream.read()
+        self.grabbed, self.frame = self.camStream.read()
 
         # Name the stream
         self.name = name
@@ -101,7 +101,7 @@ class FRCWebCam:
                 return
             
             # If not stopping, grab new frame
-            (self.grabbed, self.frame) = self.camStream.read()
+            self.grabbed, self.frame = self.camStream.read()
 
 
     # Define frame read method
@@ -110,7 +110,7 @@ class FRCWebCam:
         # Undistort image
         if self.undistort_img == True:
             h, w = self.frame.shape[:2]
-            (new_matrix, roi) = cv.getOptimalNewCameraMatrix(self.cam_matrix,
+            new_matrix, roi = cv.getOptimalNewCameraMatrix(self.cam_matrix,
                                                              self.distort_coeffs,
                                                              (w,h),1,(w,h))
             newFrame = cv.undistort(self.frame, self.cam_matrix,

@@ -63,7 +63,7 @@ from time import sleep
 #Team 4121 module imports
 from FRCVisionLibrary import VisionLibrary
 from FRCCameraLibrary import FRCWebCam
-#from FRCNavxLibrary import FRCNavx
+from FRCNavxLibrary import FRCNavx
 
 #Set up basic logging
 logging.basicConfig(level=logging.DEBUG)
@@ -180,14 +180,15 @@ def main():
     networkTablesConnected = False
     ballCamConnected = False
     goalCamConnected = False
-    foundBall = False
+    ballsFound = 0
+    markersFound = 0
     foundTape = False
     foundVisionTarget = False
     tapeTargetLock = False
 
     #Create Navx object
-    #navx = FRCNavx('NavxStream')
-    #navx.start_navx()
+    navx = FRCNavx('NavxStream')
+    navx.start_navx()
 
     #Get current time as a string
     currentTime = time.localtime(time.time())
@@ -260,13 +261,11 @@ def main():
         imgBlankRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
 
         #Read gyro angle
-        #gyroAngle = navx.read_angle()
+        gyroAngle = navx.read_angle()
         
         #Call detection methods
-        ballsFound, ballData = visionProcessor.detect_game_balls(imgBallRaw, int(cameraValues['BallCamWidth']),
-                                                                                                                                                    int(cameraValues['BallCamHeight']),
-                                                                                                                                                    float(cameraValues['BallCamFOV']))
-       
+        ballsFound, ballData = visionProcessor.detect_game_balls(imgBallRaw, int(cameraValues['BallCamWidth']),int(cameraValues['BallCamHeight']),float(cameraValues['BallCamFOV']))
+        markersFound, markerData = visionProcessor.detect_field_marker(imgBallRaw, int(cameraValues['BallCamWidth']),int(cameraValues['BallCamHeight']),float(cameraValues['BallCamFOV']))
 ##        tapeCameraValues, tapeRealWorldValues, foundTape, tapeTargetLock, rect, box = visionProcessor.detect_tape_rectangle(imgGoalRaw, int(cameraValues['GoalCamWidth']),
 ##                                                                                                                        int(cameraValues['GoalCamHeight']),
 ##                                                                                                                        float(cameraValues['GoalCamFOV']),
@@ -274,32 +273,83 @@ def main():
 ##                                                                                                                        float(cameraValues['GoalCamMountAngle']),
 ##                                                                                                                        float(cameraValues['GoalCamMountHeight']))
 
-        #cv.putText(imgBlankRaw, 'Gyro: %.2f' %gyroAngle, (10, 110), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+        #cv.putText(imgBallRaw, 'Balls found: %.2f' %ballsFound, (10, 110), cv.FONT_HERSHEY_SIMPLEX, 1,(0, 0, 255), 2)
+        #cv.putText(imgBallRaw, 'Markers found: %.2f' %markersFound, (10, 140), cv.FONT_HERSHEY_SIMPLEX, 1,(0, 0, 255), 2)
 
-        #Detect ball pattern
-        ballPatternNumber, ballPatternName = determineBallPattern(1, ballData[0]['x'], ballData[0]['distance'], ballData[0]['angle'])
+
+        #Define ball variables for use later
+        ballPatternNumber = 0
+        ballPatternName = ""
+
         
         #Draw ball contours and target data on the image
         if ballsFound > 0:
+
+            #Detect ball pattern
+            ballPatternNumber, ballPatternName = determineBallPattern(1, ballData[0]['x'], ballData[0]['distance'], ballData[0]['angle'])
 
             #Copy raw image
             imgBallNew = imgBallRaw
 
             #Loop over all contours and annotate image
-            for i in range(0, ballsFound-1):
+            i = 0
+            for ball in ballData:
 
-                if i == 0:
+                if i < 3:
 
-                    cv.circle(imgBallNew, (int(ballData[i]['x']), int(ballData[i]['y'])), int(ballData[i]['radius']), (0, 0, 255), 2)
-                    cv.putText(imgBallNew, 'Distance to Ball: %.2f' %ballData[i]['distance'], (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-                    cv.putText(imgBallNew, 'Angle to Ball: %.2f' %ballData[i]['angle'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-                    cv.putText(imgBallNew, 'Radius: %.2f' %ballData[i]['radius'], (10, 45), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                    if i == 0:
+                        cv.circle(imgBallNew, (int(ballData[i]['x']), int(ballData[i]['y'])), int(ballData[i]['radius']), (0, 0, 255), 2)
+                        #cv.putText(imgBallNew, 'Distance to Ball: %.2f' %ballData[i]['distance'], (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                        #cv.putText(imgBallNew, 'Angle to Ball: %.2f' %ballData[i]['angle'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                        #cv.putText(imgBallNew, 'Radius: %.2f' %ballData[i]['radius'], (10, 45), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                    else:
+                        cv.circle(imgBallNew, (int(ballData[i]['x']), int(ballData[i]['y'])), int(ballData[i]['radius']), (0, 255, 0), 2)
+
+                    ballDistance = ballData[i]['distance']
+                    ballAngle = ballData[i]['angle']
+                    ballScreenPercent = ballData[i]['percent']
+                    ballOffset = ballData[i]['offset']
+
+
+                    if networkTablesConnected == True:
+                        visionTable.putNumber("BallDistance" + str(i), ballDistance)
+                        visionTable.putNumber("BallAngle" + str(i), ballAngle)
+                        visionTable.putNumber("BallScreenPercent" + str(i), ballScreenPercent)
+                        visionTable.putNumber("BallOffset" + str(i), ballOffset)
 
                 else:
 
                     cv.circle(imgBallNew, (int(ballData[i]['x']), int(ballData[i]['y'])), int(ballData[i]['radius']), (0, 255, 0), 2)
 
+                i += 1
 
+        #Define marker variables for use later
+        markerDistance = 0
+        markerAngle = 0
+        markerScreenPercent = 0
+        
+        #Draw vision markers
+        if markersFound > 0:
+
+            #Copy raw image
+            imgBallNew = imgBallRaw
+
+            #Loop over all contours and annotate image
+            i = 0
+            for marker in markerData:
+
+                if i == 0:
+
+                    cv.rectangle(imgBallNew, (int(markerData[i]['x']), int(markerData[i]['y'])), (int(markerData[i]['w']) + int(markerData[i]['x']), int(markerData[i]['y']) + int(markerData[i]['h'])), (0, 0, 255), 2)
+                    cv.putText(imgBallNew, 'Distance to Marker: %.2f' %markerData[i]['distance'], (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                    cv.putText(imgBallNew, 'Angle to Marker: %.2f' %markerData[i]['angle'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                    
+                else:
+
+                    cv.rectangle(imgBallNew, (int(markerData[i]['x']), int(markerData[i]['y'])), (int(markerData[i]['w']) + int(markerData[i]['x']), int(markerData[i]['y']) + int(markerData[i]['h'])), (0, 255, 0), 2)
+
+                i += 1
+                
         #Draw vision tape contours and target data on the image
         if foundTape == True:
             imgGoalNew = imgGoalRaw
@@ -320,7 +370,7 @@ def main():
 
         #Put values in NetworkTables
         if networkTablesConnected == True:
-            #navxTable.putNumber("GyroAngle", gyroAngle)
+            navxTable.putNumber("GyroAngle", gyroAngle)
 
             visionTable.putBoolean("FoundTape", foundTape)
 
@@ -329,12 +379,16 @@ def main():
                 visionTable.putNumber("TapeDistance", tapeRealWorldValues['TapeDistance'])
                 visionTable.putNumber("TapeOffset", tapeCameraValues['Offset'])
 
-            visionTable.putBoolean("FoundBall", foundBall)
+            visionTable.putBoolean("FoundBall", bool(ballsFound > 0))
             
-            if foundBall == True:
-                visionTable.putNumber("BallDistance", ballDistance)
-                visionTable.putNumber("BallAngle", ballAngle)
-                visionTable.putNumber("BallScreenPercent", ballScreenPercent)
+            if ballsFound > 0:
+                visionTable.putNumber("BallLayoutNum", ballPatternNumber)
+                visionTable.putString("BallLayoutName", ballPatternName)
+
+            if markersFound > 0:
+                visionTable.putNumber("MarkerDistance", markerDistance)
+                visionTable.putNumber("MarkerAngle", markerAngle)
+                visionTable.putNumber("MarkerScreenPercent", markerScreenPercent)
 
         #Display the vision camera stream (for testing only)
         if videoTesting == True:
@@ -344,21 +398,21 @@ def main():
 
         #Check for gyro re-zero
         gyroInit = navxTable.getNumber("ZeroGyro", 0)
-    #    if gyroInit == 1:
-    #        navx.reset_gyro()
-    #        navxTable.putNumber("ZeroGyro", 0)
+        if gyroInit == 1:
+            navx.reset_gyro()
+            navxTable.putNumber("ZeroGyro", 0)
         
         #Check for stop code from robot or keyboard (for testing)
         if videoTesting == True:
             if cv.waitKey(1) == 27:
                 break
             
-##        robotStop = visionTable.getNumber("RobotStop", 0)
-##        if (robotStop == 1) or (networkTablesConnected == False):
-##            break
+        robotStop = visionTable.getNumber("RobotStop", 0)
+        if (robotStop == 1) or (networkTablesConnected == False):
+            break
 
         #Pause before next analysis
-        time.sleep(0.066) #should give ~15 FPS
+        #time.sleep(0.066) #should give ~15 FPS
 
     #Close all open windows (for testing)
     if videoTesting == True:
@@ -369,7 +423,7 @@ def main():
 #    goalCamera.release_cam()
 
     #Release Navx resource
-    #navx.stop_navx()
+    navx.stop_navx()
     
     #Close the log file
     #        navx.reset_gyro()
