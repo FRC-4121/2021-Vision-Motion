@@ -33,10 +33,14 @@ calibration_dir = '/home/pi/Team4121/Config'
 class FRCWebCam:
 
     # Define initialization
-    def __init__(self, src, name, settings):
+    def __init__(self, src, name, settings, savevideo, videodir):
 
         # Initialize instance variables
         self.undistort_img = False
+
+        # Save video settings
+        self.saveVideo = savevideo
+        self.videoDir = videodir
 
         # Set up web camera
         self.device_id = src
@@ -47,21 +51,22 @@ class FRCWebCam:
         self.camStream.set(cv.CAP_PROP_EXPOSURE, int(settings['Exposure']))
         self.camStream.set(cv.CAP_PROP_FPS, int(settings['FPS']))
 
+        # Store frame size
+        self.height = int(settings['Height'])
+        self.width = int(settings['Width'])
+
         # Make sure video capture is opened
         if self.camStream.isOpened() == False:
             self.camStream.open(self.device_id)
 
         # Initialize blank frames
-        self.frame = np.zeros(shape=(int(settings['Width']), int(settings['Height']), 3), dtype=np.uint8)
+        self.frame = np.zeros(shape=(self.width, self.height, 3), dtype=np.uint8)
 
         # Grab an initial frame
         self.grabbed, self.frame = self.camStream.read()
 
         # Name the stream
         self.name = name
-
-        # Initialize stop flag
-        self.stopped = False
 
         # Read camera calibration files
         cam_matrix_file = calibration_dir + '/Camera_Matrix_Cam' + str(self.device_id) + '.txt'
@@ -72,40 +77,20 @@ class FRCWebCam:
             self.undistort_img = True
 
 
-    # Define camera thread start method
-    def start_camera(self):
+    # Define write video method
+    def write_video_to_file(self):
 
-        # Define camera thread
-        camThread = Thread(target=self.update, name=self.name, args=())
-        camThread.daemon = True
-        camThread.start()
-
-        return self
-
-
-    # Define camera thread stop method
-    def stop_camera(self):
-
-        #Set stop flag
-        self.stopped = True
-
-
-    # Define camera update method
-    def update(self):
-
-        # Main thread loop
-        while True:
-
-            # Check stop flag
-            if self.stopped:
-                return
-            
-            # If not stopping, grab new frame
-            self.grabbed, self.frame = self.camStream.read()
+        return True
 
 
     # Define frame read method
     def read_frame(self):
+
+        # Declare frame for undistorted image
+        newFrame = np.zeros(shape=(self.width, self.height, 3), dtype=np.uint8)
+
+        # Grab new frame
+        self.grabbed, self.frame = self.camStream.read()
 
         # Undistort image
         if self.undistort_img == True:
@@ -123,6 +108,13 @@ class FRCWebCam:
 
             newFrame = self.frame
 
+        # Start video writer thread if saving videos
+        if self.saveVideo == True:
+
+            # Define camera thread
+            writerThread = Thread(target=self.write_video_to_file, name=self.name, args=())
+            writerThread.daemon = True
+            writerThread.start()
 
         # Return the most recent frame
         return newFrame
@@ -130,9 +122,6 @@ class FRCWebCam:
 
     # Define camera release method
     def release_cam(self):
-
-        # Stop the camera thread
-        self.stop_camera()
 
         # Release the camera resource
         self.camStream.release()

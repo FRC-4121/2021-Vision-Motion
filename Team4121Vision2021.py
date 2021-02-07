@@ -187,15 +187,15 @@ def main():
     tapeTargetLock = False
 
     #Create Navx object
-    navx = FRCNavx('NavxStream')
-    navx.start_navx()
+    #navx = FRCNavx('NavxStream')
+    #navx.start_navx()
 
     #Get current time as a string
     currentTime = time.localtime(time.time())
     timeString = str(currentTime.tm_year) + str(currentTime.tm_mon) + str(currentTime.tm_mday) + str(currentTime.tm_hour) + str(currentTime.tm_min)
 
     #Open a log file
-    logFilename = '/data/Logs/Run_Log_' + timeString + '.txt'
+    logFilename = '/home/pi/Team4121/Logs/Run_Log_' + timeString + '.txt'
     log_file = open(logFilename, 'w')
     log_file.write('run started on %s.\n' % datetime.datetime.now())
     log_file.write('')
@@ -225,7 +225,6 @@ def main():
     ballCamSettings['Exposure'] = cameraValues['BallCamExposure']
     ballCamSettings['FPS'] = cameraValues['BallCamFPS']
     ballCamera = FRCWebCam('/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.4:1.0-video-index0', "BallCam", ballCamSettings)
-    ballCamera.start_camera()
 
     #Create goal camera stream
 ##    goalCamSettings = {}
@@ -235,25 +234,20 @@ def main():
 ##    goalCamSettings['Exposure'] = cameraValues['GoalCamExposure']
 ##    goalCamSettings['FPS'] = cameraValues['GoalCamFPS']
 ##    goalCamera = FRCWebCam('/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.4:1.0-video-index0', "GoalCam", goalCamSettings)
-##    goalCamera.start_camera()
 
     #Create vision processing
     visionProcessor = VisionLibrary(visionFile)
 
     #Create blank vision image
     imgBallRaw = np.zeros(shape=(int(cameraValues['BallCamWidth']), int(cameraValues['BallCamHeight']), 3), dtype=np.uint8)
-    imgGoalRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
+    #imgGoalRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
     imgBlankRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
 
+    #Initialize gyro angle
     gyroAngle = 0
     
     #Start main processing loop
     while (True):
-
-        #Read in an image from a file (for testing)
-        #img = cv.imread('RetroreflectiveTapeImages2019/CargoStraightDark90in.jpg')
-        #if img is None:
-        #    break
 
         #Read frames from cameras
         imgBallRaw = ballCamera.read_frame()
@@ -261,7 +255,7 @@ def main():
         imgBlankRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
 
         #Read gyro angle
-        gyroAngle = navx.read_angle()
+        #gyroAngle = navx.read_angle()
         
         #Call detection methods
         ballsFound, ballData = visionProcessor.detect_game_balls(imgBallRaw, int(cameraValues['BallCamWidth']),int(cameraValues['BallCamHeight']),float(cameraValues['BallCamFOV']))
@@ -276,17 +270,15 @@ def main():
         #cv.putText(imgBallRaw, 'Balls found: %.2f' %ballsFound, (10, 110), cv.FONT_HERSHEY_SIMPLEX, 1,(0, 0, 255), 2)
         #cv.putText(imgBallRaw, 'Markers found: %.2f' %markersFound, (10, 140), cv.FONT_HERSHEY_SIMPLEX, 1,(0, 0, 255), 2)
 
-
         #Define ball variables for use later
         ballPatternNumber = 0
         ballPatternName = ""
-
-        
+       
         #Draw ball contours and target data on the image
         if ballsFound > 0:
 
             #Detect ball pattern
-            ballPatternNumber, ballPatternName = determineBallPattern(1, ballData[0]['x'], ballData[0]['distance'], ballData[0]['angle'])
+            #ballPatternNumber, ballPatternName = determineBallPattern(1, ballData[0]['x'], ballData[0]['distance'], ballData[0]['angle'])
 
             #Copy raw image
             imgBallNew = imgBallRaw
@@ -299,9 +291,9 @@ def main():
 
                     if i == 0:
                         cv.circle(imgBallNew, (int(ballData[i]['x']), int(ballData[i]['y'])), int(ballData[i]['radius']), (0, 0, 255), 2)
-                        #cv.putText(imgBallNew, 'Distance to Ball: %.2f' %ballData[i]['distance'], (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-                        #cv.putText(imgBallNew, 'Angle to Ball: %.2f' %ballData[i]['angle'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-                        #cv.putText(imgBallNew, 'Radius: %.2f' %ballData[i]['radius'], (10, 45), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                        cv.putText(imgBallNew, 'Distance to Ball: %.2f' %ballData[i]['distance'], (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                        cv.putText(imgBallNew, 'Angle to Ball: %.2f' %ballData[i]['angle'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                        cv.putText(imgBallNew, 'Radius: %.2f' %ballData[i]['radius'], (10, 45), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
                     else:
                         cv.circle(imgBallNew, (int(ballData[i]['x']), int(ballData[i]['y'])), int(ballData[i]['radius']), (0, 255, 0), 2)
 
@@ -341,8 +333,8 @@ def main():
                 if i == 0:
 
                     cv.rectangle(imgBallNew, (int(markerData[i]['x']), int(markerData[i]['y'])), (int(markerData[i]['w']) + int(markerData[i]['x']), int(markerData[i]['y']) + int(markerData[i]['h'])), (0, 0, 255), 2)
-                    cv.putText(imgBallNew, 'Distance to Marker: %.2f' %markerData[i]['distance'], (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-                    cv.putText(imgBallNew, 'Angle to Marker: %.2f' %markerData[i]['angle'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                    cv.putText(imgBallNew, 'Distance to Marker: %.2f' %markerData[i]['distance'], (10, 60), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                    cv.putText(imgBallNew, 'Angle to Marker: %.2f' %markerData[i]['angle'], (10, 75), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
                     
                 else:
 
@@ -351,26 +343,27 @@ def main():
                 i += 1
                 
         #Draw vision tape contours and target data on the image
-        if foundTape == True:
-            imgGoalNew = imgGoalRaw
-            if tapeTargetLock:
-                cv.rectangle(imgGoalNew,(tapeCameraValues['TargetX'],tapeCameraValues['TargetY']),(tapeCameraValues['TargetX']+tapeCameraValues['TargetW'],tapeCameraValues['TargetY']+tapeCameraValues['TargetH']),(0,255,0),2) #vision tape
-                cv.drawContours(imgGoalNew, [box], 0, (0,0,255), 2)
+        # if foundTape == True:
+        #     imgGoalNew = imgGoalRaw
+        #     if tapeTargetLock:
+        #         cv.rectangle(imgGoalNew,(tapeCameraValues['TargetX'],tapeCameraValues['TargetY']),(tapeCameraValues['TargetX']+tapeCameraValues['TargetW'],tapeCameraValues['TargetY']+tapeCameraValues['TargetH']),(0,255,0),2) #vision tape
+        #         cv.drawContours(imgGoalNew, [box], 0, (0,0,255), 2)
             
-            cv.putText(imgBlankRaw, 'Tape Distance (A): %.2f' %tapeRealWorldValues['StraightDistance'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
-            cv.putText(imgBlankRaw, 'Tape Distance (S): %.2f' %tapeRealWorldValues['TapeDistance'], (10, 50), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
-            cv.putText(imgBlankRaw, 'Wall Distance: %.2f' %tapeRealWorldValues['WallDistance'], (10, 70), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
-            cv.putText(imgBlankRaw, 'Bot Angle: %.2f' %tapeRealWorldValues['BotAngle'], (10, 90), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
-            cv.putText(imgBlankRaw, 'IPP: %.2f' %tapeCameraValues['IPP'], (10, 130), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
-            cv.putText(imgBlankRaw, 'Vert Offset: %.2f' %tapeRealWorldValues['VertOffset'], (10, 150), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
-            cv.putText(imgBlankRaw, 'Offset: %.2f' %tapeCameraValues['Offset'], (10, 170), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
-            cv.putText(imgBlankRaw, 'Target Width: %.2f' %tapeCameraValues['TargetW'], (10, 190), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
-            cv.putText(imgBlankRaw, 'Apparent Width: %.2f' %tapeRealWorldValues['ApparentWidth'], (10, 210), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+        #     cv.putText(imgBlankRaw, 'Tape Distance (A): %.2f' %tapeRealWorldValues['StraightDistance'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+        #     cv.putText(imgBlankRaw, 'Tape Distance (S): %.2f' %tapeRealWorldValues['TapeDistance'], (10, 50), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+        #     cv.putText(imgBlankRaw, 'Wall Distance: %.2f' %tapeRealWorldValues['WallDistance'], (10, 70), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+        #     cv.putText(imgBlankRaw, 'Bot Angle: %.2f' %tapeRealWorldValues['BotAngle'], (10, 90), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+        #     cv.putText(imgBlankRaw, 'IPP: %.2f' %tapeCameraValues['IPP'], (10, 130), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+        #     cv.putText(imgBlankRaw, 'Vert Offset: %.2f' %tapeRealWorldValues['VertOffset'], (10, 150), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+        #     cv.putText(imgBlankRaw, 'Offset: %.2f' %tapeCameraValues['Offset'], (10, 170), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+        #     cv.putText(imgBlankRaw, 'Target Width: %.2f' %tapeCameraValues['TargetW'], (10, 190), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+        #     cv.putText(imgBlankRaw, 'Apparent Width: %.2f' %tapeRealWorldValues['ApparentWidth'], (10, 210), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
 
 
         #Put values in NetworkTables
         if networkTablesConnected == True:
-            navxTable.putNumber("GyroAngle", gyroAngle)
+
+            #navxTable.putNumber("GyroAngle", gyroAngle)
 
             visionTable.putBoolean("FoundTape", foundTape)
 
@@ -397,10 +390,10 @@ def main():
 #            cv.imshow("Data", imgBlankRaw)
 
         #Check for gyro re-zero
-        gyroInit = navxTable.getNumber("ZeroGyro", 0)
-        if gyroInit == 1:
-            navx.reset_gyro()
-            navxTable.putNumber("ZeroGyro", 0)
+        # gyroInit = navxTable.getNumber("ZeroGyro", 0)
+        # if gyroInit == 1:
+        #     navx.reset_gyro()
+        #     navxTable.putNumber("ZeroGyro", 0)
         
         #Check for stop code from robot or keyboard (for testing)
         if videoTesting == True:
@@ -423,7 +416,7 @@ def main():
 #    goalCamera.release_cam()
 
     #Release Navx resource
-    navx.stop_navx()
+    #navx.stop_navx()
     
     #Close the log file
     #        navx.reset_gyro()
