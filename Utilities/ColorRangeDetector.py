@@ -60,8 +60,8 @@ def get_trackbar_values(range_filter):
 def main():
 
     # Set type of filter
-    range_filter = "HSV"
-    #range_filter = "BGR"
+    #range_filter = "HSV"
+    range_filter = "BGR"
 
     # Setup webcam capture
     camera = cv2.VideoCapture(0)
