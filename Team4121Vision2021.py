@@ -69,18 +69,18 @@ from FRCNavxLibrary import FRCNavx
 logging.basicConfig(level=logging.DEBUG)
 
 #Declare global variables
-cameraFile = '/home/pi/Team4121/Config/2020CameraSettings.txt'
-visionFile = '/home/pi/Team4121/Config/2020VisionSettings.txt'
+cameraFile = '/home/pi/Team4121/Config/2021CameraSettings.txt'
+visionFile = '/home/pi/Team4121/Config/2021VisionSettings.txt'
 videoDirectory = '/home/pi/Team4121/Videos'
 cameraValues={}
 
 #Define program control flags
-useNavx = True
+useNavx = False
 useFieldCam = True
-useGoalCam = True
+useGoalCam = False
 findBalls = True
 findMarkers = True
-findGoal = True
+findGoal = False
 videoTesting = True
 
 #Read vision settings file
@@ -294,6 +294,8 @@ def main():
                 markersFound, markerData = visionProcessor.detect_field_marker(imgFieldRaw, int(cameraValues['FieldCamWidth']),
                                                                         int(cameraValues['FieldCamHeight']),
                                                                         float(cameraValues['FieldCamFOV']))
+            #Copy raw image
+            imgFieldNew = imgFieldRaw
 
             #Draw ball contours and target data on the image
             if ballsFound > 0:
@@ -301,9 +303,7 @@ def main():
                 #Detect ball pattern
                 #ballPatternNumber, ballPatternName = determineBallPattern(1, ballData[0]['x'], ballData[0]['distance'], ballData[0]['angle'])
 
-                #Copy raw image
-                imgFieldNew = imgFieldRaw
-
+                
                 #Loop over found balls and process data
                 i = 0
                 for ball in ballData:
@@ -455,7 +455,7 @@ def main():
                 break
 
         #Pause before next analysis
-        time.sleep(0.066) #should give ~15 FPS
+        #time.sleep(0.066) #should give ~15 FPS
 
     #Close all open windows (for testing)
     if videoTesting == True:
