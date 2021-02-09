@@ -249,7 +249,7 @@ def main():
         fieldCamSettings['Brightness'] = cameraValues['FieldCamBrightness']
         fieldCamSettings['Exposure'] = cameraValues['FieldCamExposure']
         fieldCamSettings['FPS'] = cameraValues['FieldCamFPS']
-        fieldCamera = FRCWebCam('/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.4:1.0-video-index0', "FieldCam", fieldCamSettings)
+        fieldCamera = FRCWebCam('/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index0', "FieldCam", fieldCamSettings)
 
     #Create goal camera stream (to find vision tape marked shooting targets)
     if findGoal == True:

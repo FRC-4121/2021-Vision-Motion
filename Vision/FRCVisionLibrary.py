@@ -120,7 +120,7 @@ class VisionLibrary:
         mask = cv.inRange(hsv, hsvMin, hsvMax)
 
         # Find contours in mask
-        _, contours, _ = cv.findContours(mask,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv.findContours(mask,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE)
     
         return contours
 
