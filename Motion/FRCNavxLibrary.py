@@ -66,12 +66,6 @@ class FRCNavx:
         # Set name of Navx thread
         self.name = name
 
-        # Initialize stop flag
-        if self.vmxOpen is True:
-            self.stopped = False
-        else:
-            self.stopped = True
-
         # Initialize Navx values
         self.angle = 0.0
         self.yaw = 0.0
@@ -87,61 +81,24 @@ class FRCNavx:
             self.date = self.vmx.getTime().GetRTCDate()
        
 
-    # Define Navx thread start method
-    def start_navx(self):
-
-        # Define navx thread
-        navxThread = Thread(target=self.update, name=self.name, args=())
-        navxThread.daemon = True
-        navxThread.start()
-
-        return self
-
-
-    # Define Navxstop method
-    def stop_navx(self):
-
-        # Set stop flag
-        self.stopped = True
-
-
-    # Define main thread update method
-    def update(self):
-
-        # Main thread loop
-        while True:
-
-            # Check stop flag
-            if self.stopped:
-                return
-
-            # If not stopped, read Navx gyro values
-            self.angle = round(self.vmx.getAHRS().GetAngle(), 2)
-            #self.yaw = round(self.vmx.getAHRS().GetYaw(), 2)
-            #self.pitch = round(self.vmx.getAHRS().GetPitch(), 2)
-
-            # Read Navx time and date
-            self.time = self.vmx.getTime().GetRTCTime()
-            self.date = self.vmx.getTime().GetRTCDate()
-
-            time.sleep(.1)
-    
-
     # Define read angle method
     def read_angle(self):
 
+        self.angle = round(self.vmx.getAHRS().GetAngle(), 2)
         return self.angle
 
 
     # Define read yaw method
     def read_yaw(self):
 
+        self.yaw = round(self.vmx.getAHRS().GetYaw(), 2)
         return self.yaw
 
 
     # Define read pitch method
     def read_pitch(self):
 
+        self.pitch = round(self.vmx.getAHRS().GetPitch(), 2)
         return self.pitch
 
 
@@ -155,12 +112,14 @@ class FRCNavx:
     # Define read time method
     def read_time(self):
 
+        self.time = self.vmx.getTime().GetRTCTime()
         return self.time
     
 
     # Define read date method
     def read_date(self):
 
+        self.date = self.vmx.getTime().GetRTCDate()
         return self.date
     
 
@@ -183,3 +142,58 @@ class FRCNavx:
                                                 newdate[3])
 
         return success
+    
+
+    # Define day of week conversion method
+    def get_day_name(self, weekday):
+
+        if weekday == 1:
+            return 'Monday'
+        elif weekday == 2:
+            return 'Tuesday'
+        elif weekday == 3:
+            return 'Wednesday'
+        elif weekday == 4:
+            return 'Thursday'
+        elif weekday == 5:
+            return 'Friday'
+        elif weekday == 6:
+            return 'Saturday'
+        elif weekday == 7:
+            return 'Sunday'
+    
+
+    # Define month conversion method
+    def get_month_name(self, month):
+
+        if month == 1:
+            return 'January'
+        elif month == 2:
+            return 'February'
+        elif month == 3:
+            return 'March'
+        elif month == 4:
+            return 'April'
+        elif month == 5:
+            return 'May'
+        elif month == 6:
+            return 'June'
+        elif month == 7:
+            return 'July'
+        elif month == 8:
+            return 'August'
+        elif month == 9:
+            return 'September'
+        elif month == 10:
+            return 'October'
+        elif month == 11:
+            return 'November'
+        elif month == 12:
+            return 'December'
+    
+
+    # Define year conversion method
+    def get_year(self, year):
+
+        return (year + 2000)
+

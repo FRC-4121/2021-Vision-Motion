@@ -9,8 +9,8 @@
 #  for vision processing during an FRC game.  Reading of the webcam  #
 #  frames is threaded for improved performance.                      #
 #                                                                    #
-# @Version: 1.0                                                      #
-# @Created: 2020-2-7                                                 #
+# @Version: 2.0                                                      #
+# @Created: 2021-2-8                                                 #
 # @Author: Team 4121                                                 #
 #                                                                    #
 ######################################################################
@@ -33,14 +33,10 @@ calibration_dir = '/home/pi/Team4121/Config'
 class FRCWebCam:
 
     # Define initialization
-    def __init__(self, src, name, settings, savevideo, videodir):
+    def __init__(self, src, name, settings):
 
         # Initialize instance variables
         self.undistort_img = False
-
-        # Save video settings
-        self.saveVideo = savevideo
-        self.videoDir = videodir
 
         # Set up web camera
         self.device_id = src
@@ -77,12 +73,6 @@ class FRCWebCam:
             self.undistort_img = True
 
 
-    # Define write video method
-    def write_video_to_file(self):
-
-        return True
-
-
     # Define frame read method
     def read_frame(self):
 
@@ -107,14 +97,6 @@ class FRCWebCam:
         else:
 
             newFrame = self.frame
-
-        # Start video writer thread if saving videos
-        if self.saveVideo == True:
-
-            # Define camera thread
-            writerThread = Thread(target=self.write_video_to_file, name=self.name, args=())
-            writerThread.daemon = True
-            writerThread.start()
 
         # Return the most recent frame
         return newFrame
