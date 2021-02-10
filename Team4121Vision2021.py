@@ -309,29 +309,29 @@ def main():
                 for ball in ballData:
 
                     if i < 3:
+                        
+                        #Write ball data to network table
+                        if networkTablesConnected == True:
+                            visionTable.putBoolean("FoundBall", bool(ballsFound > 0))
+                            visionTable.putNumber("BallLayoutNum", ballPatternNumber)
+                            visionTable.putString("BallLayoutName", ballPatternName)
+                            visionTable.putNumber("BallDistance" + str(i), ball['distance'])
+                            visionTable.putNumber("BallAngle" + str(i), ball['angle'])
+                            visionTable.putNumber("BallScreenPercent" + str(i), ball['percent'])
+                            visionTable.putNumber("BallOffset" + str(i), ball['offset'])
 
                         if i == 0:
                             cv.circle(imgFieldNew, (int(ball['x']), int(ball['y'])), int(ball['radius']), (0, 0, 255), 2)
-                            cv.putText(imgFieldNew, 'Distance to Ball: %.2f' %ball['distance'], (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-                            cv.putText(imgFieldNew, 'Angle to Ball: %.2f' %ball['angle'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-                            cv.putText(imgFieldNew, 'Radius: %.2f' %ball['radius'], (10, 45), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                            #cv.putText(imgFieldNew, 'Distance to Ball: %.2f' %ball['distance'], (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                            #cv.putText(imgFieldNew, 'Angle to Ball: %.2f' %ball['angle'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                            #cv.putText(imgFieldNew, 'Radius: %.2f' %ball['radius'], (10, 45), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
                         else:
                             cv.circle(imgFieldNew, (int(ball['x']), int(ball['y'])), int(ball['radius']), (0, 255, 0), 2)
 
                     else:
 
                         cv.circle(imgFieldNew, (int(ball['x']), int(ball['y'])), int(ball['radius']), (0, 255, 0), 2)
-
-                    #Write ball data to network table
-                    if networkTablesConnected == True:
-                        visionTable.putBoolean("FoundBall", bool(ballsFound > 0))
-                        visionTable.putNumber("BallLayoutNum", ballPatternNumber)
-                        visionTable.putString("BallLayoutName", ballPatternName)
-                        visionTable.putNumber("BallDistance" + str(i), ball['distance'])
-                        visionTable.putNumber("BallAngle" + str(i), ball['angle'])
-                        visionTable.putNumber("BallScreenPercent" + str(i), ball['percent'])
-                        visionTable.putNumber("BallOffset" + str(i), ball['offset'])
-
+                    
                     i += 1
 
             #Draw vision markers
@@ -348,8 +348,8 @@ def main():
                     if i == 0:
 
                         cv.rectangle(imgFieldNew, (int(marker['x']), int(marker['y'])), (int(marker['w']) + int(marker['x']), int(marker['y']) + int(marker['h'])), (0, 0, 255), 2)
-                        cv.putText(imgFieldNew, 'Distance to Marker: %.2f' %marker['distance'], (10, 60), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-                        cv.putText(imgFieldNew, 'Angle to Marker: %.2f' %marker['angle'], (10, 75), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                        #cv.putText(imgFieldNew, 'Distance to Marker: %.2f' %marker['distance'], (10, 60), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                        #cv.putText(imgFieldNew, 'Angle to Marker: %.2f' %marker['angle'], (10, 75), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
                     
                     else:
 
