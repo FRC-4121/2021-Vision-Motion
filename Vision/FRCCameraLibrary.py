@@ -10,7 +10,8 @@
 #  frames is threaded for improved performance.                      #
 #                                                                    #
 # @Version: 2.0                                                      #
-# @Created: 2021-2-8                                                 #
+# @Created: 2020-02-07                                               #
+# @Revised: 2021-02-16                                               #
 # @Author: Team 4121                                                 #
 #                                                                    #
 ######################################################################
@@ -64,6 +65,9 @@ class FRCWebCam:
         # Name the stream
         self.name = name
 
+        # Initialize stop flag
+        self.stopped = False
+
         # Read camera calibration files
         cam_matrix_file = calibration_dir + '/Camera_Matrix_Cam' + str(self.device_id) + '.txt'
         cam_coeffs_file = calibration_dir + '/Distortion_Coeffs_Cam' + str(self.device_id) + '.txt'
@@ -71,6 +75,38 @@ class FRCWebCam:
             self.cam_matrix = np.loadtxt(cam_matrix_file)
             self.distort_coeffs = np.loadtxt(cam_coeffs_file)
             self.undistort_img = True
+
+
+    # Define camera thread start method
+    def start_camera_thread(self):
+
+        # Define camera thread
+        camThread = Thread(target=self.update, name=self.name, args=())
+        camThread.daemon = True
+        camThread.start()
+
+        return self
+
+
+    # Define camera thread stop method
+    def stop_camera_thread(self):
+
+        # Set stop flag
+        self.stopped = True    
+
+
+    # Define threaded update method
+    def update(self):
+
+        # Main thread loop
+        while True:
+
+            # Check stop flag
+            if self.stopped:
+                return
+
+            # If not stopping, grab new frame
+            self.grabbed, self.frame = self.camStream.read()
 
 
     # Define frame read method
@@ -81,6 +117,32 @@ class FRCWebCam:
 
         # Grab new frame
         self.grabbed, self.frame = self.camStream.read()
+
+        # Undistort image
+        if self.undistort_img == True:
+            h, w = self.frame.shape[:2]
+            new_matrix, roi = cv.getOptimalNewCameraMatrix(self.cam_matrix,
+                                                             self.distort_coeffs,
+                                                             (w,h),1,(w,h))
+            newFrame = cv.undistort(self.frame, self.cam_matrix,
+                                    self.distort_coeffs, None,
+                                    new_matrix)
+            x,y,w,h = roi
+            newFrame = newFrame[y:y+h,x:x+w]
+
+        else:
+
+            newFrame = self.frame
+
+        # Return the most recent frame
+        return newFrame
+
+
+    # Define threaded frame read method
+    def read_frame_threaded(self):
+
+        # Declare frame for undistorted image
+        newFrame = np.zeros(shape=(self.width, self.height, 3), dtype=np.uint8)
 
         # Undistort image
         if self.undistort_img == True:

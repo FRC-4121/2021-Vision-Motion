@@ -10,8 +10,9 @@
 #  reading frames from each camera is threaded for improve         #
 #  performance.                                                    #
 #                                                                  #
-#  @Version: 1.0                                                   #
+#  @Version: 2.0                                                   #
 #  @Created: 2020-02-14                                            #
+#  @Revised: 2021-02-16                                            #
 #  @Author: Team 4121                                              #
 #                                                                  #
 ####################################################################
@@ -103,6 +104,10 @@ class FRCStereoCam:
         if self.rightCamStream.isOpened() == False:
             self.rightCamStream.open(self.right_id)
 
+        # Store frame size
+        self.height = int(settings['Height'])
+        self.width = int(settings['Width'])
+
         # Initialize blank frames
         self.leftFrame = np.zeros(shape=(int(settings['Width']), 
                                     int(settings['Height']), 3), 
@@ -117,7 +122,7 @@ class FRCStereoCam:
 
 
     # Define camera thread start method
-    def start_camera(self):
+    def start_camera_thread(self):
 
         #Define camera thread
         camThread = Thread(target=self.update, name=self.name, args=())
@@ -128,7 +133,7 @@ class FRCStereoCam:
 
 
     # Define camera thread stop method
-    def stop_camera(self):
+    def stop_camera_thread(self):
 
         #Set stop flag
         self.stopped = True
@@ -145,12 +150,65 @@ class FRCStereoCam:
                 return
             
             # If not stopping, grab new frame
-            (self.leftGrabbed, self.leftFrame) = self.leftCamStream.read()
-            (self.rightGrabbed, self.rightFrame) = self.rightCamStream.read()
+            self.leftGrabbed, self.leftFrame = self.leftCamStream.read()
+            self.rightGrabbed, self.rightFrame = self.rightCamStream.read()
 
 
     # Define frame read method
     def read_frame(self):
+
+        # Declare frame for undistorted image
+        newLeftFrame = np.zeros(shape=(self.width, self.height, 3), dtype=np.uint8)
+        newRightFrame = np.zeros(shape=(self.width, self.height, 3), dtype=np.uint8)
+
+        # Grab new frame
+        self.leftGrabbed, self.leftFrame = self.leftCamStream.read()
+        self.rightGrabbed, self.rightFrame = self.rightCamStream.read()
+
+        # Undistort images
+        if self.undistort_left == True and self.undistort_right == True:
+
+            left_h, left_w = self.leftFrame.shape[:2]
+            (new_left_matrix, left_roi) = cv.getOptimalNewCameraMatrix(
+                                            self.left_cam_matrix,
+                                            self.left_distort_coeffs,
+                                            (left_w,left_h),
+                                            1,
+                                            (left_w,left_h))
+            newLeftFrame = cv.undistort(self.leftFrame, 
+                                        self.left_cam_matrix,
+                                        self.left_distort_coeffs, 
+                                        None,
+                                        new_left_matrix)
+            x,y,w,h = left_roi
+            newLeftFrame = newLeftFrame[y:y+h,x:x+w]
+
+            right_h, right_w = self.rightFrame.shape[:2]
+            (new_right_matrix, right_roi) = cv.getOptimalNewCameraMatrix(
+                                            self.right_cam_matrix,
+                                            self.right_distort_coeffs,
+                                            (right_w,right_h),
+                                            1,
+                                            (right_w,right_h))
+            newRightFrame = cv.undistort(self.rightFrame, 
+                                        self.right_cam_matrix,
+                                         self.right_distort_coeffs, 
+                                         None,
+                                         new_right_matrix)
+            x,y,w,h = right_roi
+            newRightFrame = newRightFrame[y:y+h,x:x+w]
+
+        else:
+            
+            newLeftFrame = self.leftFrame
+            newRightFrame = self.rightFrame
+
+        # Return the most recent frame
+        return newLeftFrame, newRightFrame
+
+
+    # Define frame read method
+    def read_frame_threaded(self):
 
         # Undistort images
         if self.undistort_left == True and self.undistort_right == True:
@@ -196,9 +254,6 @@ class FRCStereoCam:
 
     # Define camera release method
     def release_cam(self):
-
-        # Stop the camera thread
-        self.stop_camera()
 
         # Release the camera resource
         self.leftCamStream.release()
