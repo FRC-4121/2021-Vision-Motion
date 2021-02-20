@@ -119,8 +119,15 @@ class VisionLibrary:
         # Set pixels to white if in target HSV range, else set to black
         mask = cv.inRange(hsv, hsvMin, hsvMax)
 
+        # Erode image to reduce background noise
+        kernel = np.ones((3,3), np.uint8)
+        erode = cv.erode(mask, kernel, iterations=1)
+
+        # Dilate image to sharpen actual objects
+        dilate = cv.dilate(erode, kernel, iterations=1)
+
         # Find contours in mask
-        contours, _ = cv.findContours(mask,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv.findContours(dilate,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE)
     
         return contours
 
