@@ -108,8 +108,10 @@ class VisionLibrary:
 
 
     # Define basic image processing method for contours
-    def process_image_contours(self, imgRaw, hsvMin, hsvMax):
-    
+    def process_image_contours(self, imgRaw, hsvMin, hsvMax, erodeDilate):
+        
+        finalImg = ""
+
         # Blur image to remove noise
         blur = cv.GaussianBlur(imgRaw.copy(),(13,13),0)
         
@@ -119,15 +121,27 @@ class VisionLibrary:
         # Set pixels to white if in target HSV range, else set to black
         mask = cv.inRange(hsv, hsvMin, hsvMax)
 
-        # Erode image to reduce background noise
-        kernel = np.ones((3,3), np.uint8)
-        erode = cv.erode(mask, kernel, iterations=1)
+        # cv.imshow('mask', mask)
 
-        # Dilate image to sharpen actual objects
-        dilate = cv.dilate(erode, kernel, iterations=1)
+        if erodeDilate:
+            # Erode image to reduce background noise
+            kernel = np.ones((3,3), np.uint8)
+            erode = cv.erode(mask, kernel, iterations=1)
+            
+            # cv.imshow('erode', erode)
+            
+            # Dilate image to sharpen actual objects
+            dilate = cv.dilate(erode, kernel, iterations=2)
+            
+            # cv.imshow('dilate', dilate)
+            
+            finalImg = dilate
 
+        else:
+            finalImg = mask
+        
         # Find contours in mask
-        contours, _ = cv.findContours(dilate,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv.findContours(finalImg,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE)
     
         return contours
 
@@ -172,7 +186,7 @@ class VisionLibrary:
         ballData = []
 
         # Find contours in the mask and clean up the return style from OpenCV
-        ballContours = self.process_image_contours(imgRaw, ballHSVMin, ballHSVMax)
+        ballContours = self.process_image_contours(imgRaw, ballHSVMin, ballHSVMax,True)
 
         # Only proceed if at least one contour was found
         if len(ballContours) > 0:
@@ -252,7 +266,7 @@ class VisionLibrary:
         ratioMin = float(VisionLibrary.marker_values['TARGETRATIO']) - float(VisionLibrary.marker_values['RATIOTOL'])
         
         #finding marker contours
-        markerContours = self.process_image_contours(imgRaw, markerHSVMin, markerHSVMax)
+        markerContours = self.process_image_contours(imgRaw, markerHSVMin, markerHSVMax, False)
 
         # Only proceed if at least one contour was found
         if len(markerContours) > 0:

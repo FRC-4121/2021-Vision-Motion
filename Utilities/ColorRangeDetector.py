@@ -19,6 +19,7 @@
 
 # Import modules
 import cv2
+import numpy as np
 import argparse
 from operator import xor
 
@@ -60,11 +61,11 @@ def get_trackbar_values(range_filter):
 def main():
 
     # Set type of filter
-    #range_filter = "HSV"
-    range_filter = "BGR"
+    range_filter = "HSV"
+    #range_filter = "BGR"
 
     # Setup webcam capture
-    camera = cv2.VideoCapture(0)
+    camera = cv2.VideoCapture('/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index0')
     camera.set(10, 0.3)  # Brightness
     camera.set(15, 30)  # Exposure
 
@@ -92,6 +93,12 @@ def main():
         
         # Get trackbar values
         v1_min, v2_min, v3_min, v1_max, v2_max, v3_max = get_trackbar_values(range_filter)
+
+        #Erosion
+        kernel = np.ones((5,5), np.uint8)
+        erosion = cv2.erode(frame_to_thresh, kernel, iterations = 1)
+        #Dialate
+        dialation = cv2.dilate(frame_to_thresh, kernel, iterations = 1)
 
         # Threshold frame based on trackbar values
         thresh = cv2.inRange(frame_to_thresh, (v1_min, v2_min, v3_min), (v1_max, v2_max, v3_max))
