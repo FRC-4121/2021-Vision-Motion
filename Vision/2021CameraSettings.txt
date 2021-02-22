@@ -2,12 +2,13 @@ FieldCamFOV,27.3
 FieldCamWidth,320
 FieldCamHeight,240
 FieldCamFPS,15
-FieldCamBrightness,100
-FieldCamExposure,75
+FieldCamBrightness,50
+FieldCamExposure,50
 FieldCamCalFactor,1
 FieldCamFocalLength,334.29
 FieldCamMountAngle,0
 FieldCamMountHeight,0
+FieldCamResizeFactor,2
 GoalCamFOV,23.5
 GoalCamWidth,320
 GoalCamHeight,240
@@ -18,3 +19,4 @@ GoalCamCalFactor,1
 GoalCamFocalLength,340.00
 GoalCamMountAngle,25.0
 GoalCamMountHeight,26.0
+GoalCamResizeFactor,2

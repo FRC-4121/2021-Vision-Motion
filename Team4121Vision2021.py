@@ -82,6 +82,7 @@ findBalls = True
 findMarkers = True
 findGoal = False
 videoTesting = True
+resizeVideo = True
 
 #Read vision settings file
 def read_settings_file():
@@ -116,15 +117,16 @@ def read_settings_file():
         print('Using default camera values')
         
         cameraValues['FieldCamFOV'] = 22.5
-        cameraValues['FieldCamWidth'] = 960
-        cameraValues['FieldCamHeight'] = 720
+        cameraValues['FieldCamWidth'] = 320
+        cameraValues['FieldCamHeight'] = 240
         cameraValues['FieldCamFPS'] = 15
-        cameraValues['FieldCamBrightness'] = 0.30
-        cameraValues['FieldCamExposure'] = 30
+        cameraValues['FieldCamBrightness'] = 50
+        cameraValues['FieldCamExposure'] = 50
         cameraValues['FieldCamCalFactor'] = 1
         cameraValues['FieldCamfocalLength'] = 334.29
         cameraValues['FieldCamMountAngle'] = 0
         cameraValues['FieldCamMountHeight'] = 0
+        cameraValues['FieldCamResizeFactor'] = 2
         cameraValues['GoalCamFOV'] = 23.5
         cameraValues['GoalCamWidth'] = 320
         cameraValues['GoalCamHeight'] = 240
@@ -135,6 +137,7 @@ def read_settings_file():
         cameraValues['GoalCamFocalLength'] = 340.0
         cameraValues['GoalCamMountAngle'] = 25.0
         cameraValues['GoalCamMountHeight'] = 26.0
+        cameraValues['GoalCamResizeFactor'] = 2
 
 
 #Define ball layout detection function
@@ -182,11 +185,11 @@ def main():
 
     #Define flags
     networkTablesConnected = False
-    ballCamConnected = False
-    goalCamConnected = False
     foundTape = False
     foundVisionTarget = False
     tapeTargetLock = False
+    fieldFileCreated = False
+    goalFileCreated = False
 
     #Define variables
     gyroAngle = 0
@@ -195,8 +198,17 @@ def main():
     ballData = []
     markerData = []
     currentTime = []
-    currentDate = []
     timeString = ''
+    fieldCamWriter = 0
+    fieldCamWidth = 0
+    fieldCamHeight = 0
+    fieldCamFPS = 0
+    fieldResizeFactor = 0
+    goalCamWriter = 0
+    goalCamWidth = 0
+    goalCamHeight = 0
+    goalCamFPS = 0
+    goalResizeFactor = 0
 
     #Define objects
     navx = object
@@ -211,9 +223,7 @@ def main():
 
     #Get current time as a string
     if useNavx == True:
-        currentTime = navx.read_time()
-        currentDate = navx.read_date()
-        timeString = str(navx.get_year(currentDate[4])) + str(currentDate[3]) + str(currentDate[2]) + str(currentTime[1]) + str(currentTime[2])
+        timeString = navx.get_raw_time()
     else:
         currentTime = time.localtime(time.time())
         timeString = str(currentTime.tm_year) + str(currentTime.tm_mon) + str(currentTime.tm_mday) + str(currentTime.tm_hour) + str(currentTime.tm_min)
@@ -250,6 +260,11 @@ def main():
         fieldCamSettings['Exposure'] = cameraValues['FieldCamExposure']
         fieldCamSettings['FPS'] = cameraValues['FieldCamFPS']
         fieldCamera = FRCWebCam('/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index0', "FieldCam", fieldCamSettings)
+        
+        fieldCamWidth = int(cameraValues['FieldCamWidth'])
+        fieldCamHeight = int(cameraValues['FieldCamHeight'])
+        fieldCamFPS = cameraValues['FieldCamFPS']
+        fieldResizeFactor = int(cameraValues['FieldCamResizeFactor'])
 
     #Create goal camera stream (to find vision tape marked shooting targets)
     if findGoal == True:
@@ -260,13 +275,18 @@ def main():
         goalCamSettings['Exposure'] = cameraValues['GoalCamExposure']
         goalCamSettings['FPS'] = cameraValues['GoalCamFPS']
         goalCamera = FRCWebCam('/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.4:1.0-video-index0', "GoalCam", goalCamSettings)
+        
+        goalCamWidth = cameraValues['GoalCamWidth']
+        goalCamHeight = cameraValues['GoalCamHeight']
+        goalCamFPS = cameraValues['GoalCamFPS']
+        goalResizeFactor = int(cameraValues['GoalCamResizeFactor'])
 
     #Create vision processing
     visionProcessor = VisionLibrary(visionFile)
 
     #Create blank vision image
-    imgFieldRaw = np.zeros(shape=(int(cameraValues['FieldCamWidth']), int(cameraValues['FieldCamHeight']), 3), dtype=np.uint8)
-    imgGoalRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
+    imgField = np.zeros(shape=(int(cameraValues['FieldCamWidth']), int(cameraValues['FieldCamHeight']), 3), dtype=np.uint8)
+    imgGoal = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
 
     #Start main processing loop
     while (True):
@@ -282,20 +302,17 @@ def main():
             ballPatternName = ""
 
             #Read frame from camera
-            imgFieldRaw = fieldCamera.read_frame()
-            imgFieldNew = np.zeros(shape=(int(cameraValues['FieldCamWidth']), int(cameraValues['FieldCamHeight']), 3), dtype=np.uint8)
+            imgField = fieldCamera.read_frame()
 
             #Call detection methods
             if findBalls == True:
-                ballsFound, ballData = visionProcessor.detect_game_balls(imgFieldRaw, int(cameraValues['FieldCamWidth']),
+                ballsFound, ballData = visionProcessor.detect_game_balls(imgField, int(cameraValues['FieldCamWidth']),
                                                                         int(cameraValues['FieldCamHeight']),
                                                                         float(cameraValues['FieldCamFOV']))
             if findMarkers == True:
-                markersFound, markerData = visionProcessor.detect_field_marker(imgFieldRaw, int(cameraValues['FieldCamWidth']),
+                markersFound, markerData = visionProcessor.detect_field_marker(imgField, int(cameraValues['FieldCamWidth']),
                                                                         int(cameraValues['FieldCamHeight']),
                                                                         float(cameraValues['FieldCamFOV']))
-            #Copy raw image
-            imgFieldNew = imgFieldRaw
 
             #Draw ball contours and target data on the image
             if ballsFound > 0:
@@ -321,25 +338,21 @@ def main():
                             visionTable.putNumber("BallOffset" + str(i), ball['offset'])
 
                         if i == 0:
-                            cv.circle(imgFieldNew, (int(ball['x']), int(ball['y'])), int(ball['radius']), (0, 0, 255), 2)
-                            #cv.putText(imgFieldNew, 'Distance to Ball: %.2f' %ball['distance'], (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-                            #cv.putText(imgFieldNew, 'Angle to Ball: %.2f' %ball['angle'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-                            #cv.putText(imgFieldNew, 'Radius: %.2f' %ball['radius'], (10, 45), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                            cv.circle(imgField, (int(ball['x']), int(ball['y'])), int(ball['radius']), (0, 0, 255), 2)
+                            #cv.putText(imgField, 'Distance to Ball: %.2f' %ball['distance'], (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                            #cv.putText(imgField, 'Angle to Ball: %.2f' %ball['angle'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                            #cv.putText(imgField, 'Radius: %.2f' %ball['radius'], (10, 45), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
                         else:
-                            cv.circle(imgFieldNew, (int(ball['x']), int(ball['y'])), int(ball['radius']), (0, 255, 0), 2)
+                            cv.circle(imgField, (int(ball['x']), int(ball['y'])), int(ball['radius']), (0, 255, 0), 2)
 
                     else:
 
-                        cv.circle(imgFieldNew, (int(ball['x']), int(ball['y'])), int(ball['radius']), (0, 255, 0), 2)
+                        cv.circle(imgField, (int(ball['x']), int(ball['y'])), int(ball['radius']), (0, 255, 0), 2)
                     
                     i += 1
 
-            #Draw vision markers
+            #Draw field markers
             if markersFound > 0:
-
-                #Copy raw image (only if not copied for balls)
-                if findBalls == False:
-                    imgFieldNew = imgFieldRaw
 
                 #Loop over all contours and annotate image
                 i = 0
@@ -347,13 +360,13 @@ def main():
 
                     if i == 0:
 
-                        cv.rectangle(imgFieldNew, (int(marker['x']), int(marker['y'])), (int(marker['w']) + int(marker['x']), int(marker['y']) + int(marker['h'])), (0, 0, 255), 2)
-                        #cv.putText(imgFieldNew, 'Distance to Marker: %.2f' %marker['distance'], (10, 60), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-                        #cv.putText(imgFieldNew, 'Angle to Marker: %.2f' %marker['angle'], (10, 75), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                        cv.rectangle(imgField, (int(marker['x']), int(marker['y'])), (int(marker['w']) + int(marker['x']), int(marker['y']) + int(marker['h'])), (0, 0, 255), 2)
+                        #cv.putText(imgField, 'Distance to Marker: %.2f' %marker['distance'], (10, 60), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                        #cv.putText(imgField, 'Angle to Marker: %.2f' %marker['angle'], (10, 75), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
                     
                     else:
 
-                        cv.rectangle(imgFieldNew, (int(marker['x']), int(marker['y'])), (int(marker['w']) + int(marker['x']), int(marker['y']) + int(marker['h'])), (0, 255, 0), 2)
+                        cv.rectangle(imgField, (int(marker['x']), int(marker['y'])), (int(marker['w']) + int(marker['x']), int(marker['y']) + int(marker['h'])), (0, 255, 0), 2)
 
                     #Write marker data to network table
                     if networkTablesConnected == True:
@@ -364,9 +377,56 @@ def main():
 
                     i += 1
 
+            #Determine if image should be resized before showing and saving
+            if resizeVideo:
+                imgFieldResize = cv.resize(imgField, 
+                                        (fieldResizeFactor*fieldCamWidth, fieldResizeFactor*fieldCamHeight),
+                                        interpolation = cv.INTER_LINEAR)
+
             #Display the vision camera stream (for testing only)
             if videoTesting == True:           
-                cv.imshow("Ball", imgFieldNew)            
+                if resizeVideo:
+                    cv.imshow("Field", imgFieldResize)
+                else:
+                    cv.imshow("Field", imgField)  
+
+            #Save video to a file (if enabled)
+            if networkTablesConnected:
+
+                saveVideo = visionTable.getNumber("SaveVideo", 0)
+                fourcc = cv.VideoWriter_fourcc(*'h264')
+
+                if saveVideo == 1:
+
+                    if fieldFileCreated == False:
+                        videoFilename = videoDirectory + "/FieldCam_" + navx.get_raw_time() + ".mp4"
+                        camWidth = 0
+                        camHeight = 0
+                        if resizeVideo:
+                            camWidth = fieldResizeFactor*fieldCamWidth
+                            camHeight = fieldResizeFactor*fieldCamHeight 
+                        else:
+                            camWidth = fieldCamWidth
+                            camHeight = fieldCamHeight                            
+                        fieldCamWriter = cv.VideoWriter(videoFilename, 
+                                                    fourcc, 
+                                                    fieldCamFPS, 
+                                                    (camWidth, camHeight), 
+                                                    True)
+                        fieldFileCreated = True
+
+                    if fieldFileCreated:
+                        if resizeVideo:
+                            fieldCamWriter.write(imgFieldResize)
+                        else:
+                            fieldCamWriter.write(imgField)
+                
+                else:
+
+                    if fieldFileCreated == True:
+                        fieldCamWriter.release()
+                        fieldFileCreated = False
+
 
         #####################
         # Find goal targets #
@@ -375,12 +435,11 @@ def main():
         if findGoal == True:
 
             #Read frame from camera
-            imgGoalRaw = goalCamera.read_frame()
+            imgGoal = goalCamera.read_frame()
             imgBlankRaw = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
-            imgGoalNew = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
 
             #Call detection method
-            tapeCameraValues, tapeRealWorldValues, foundTape, tapeTargetLock, rect, box = visionProcessor.detect_tape_rectangle(imgGoalRaw, int(cameraValues['GoalCamWidth']),
+            tapeCameraValues, tapeRealWorldValues, foundTape, tapeTargetLock, rect, box = visionProcessor.detect_tape_rectangle(imgGoal, int(cameraValues['GoalCamWidth']),
                                                                                                                             int(cameraValues['GoalCamHeight']),
                                                                                                                             float(cameraValues['GoalCamFOV']),
                                                                                                                             float(cameraValues['GoalCamFocalLength']),
@@ -390,11 +449,9 @@ def main():
             #Draw vision tape contours and target data on the image
             if foundTape == True:
 
-                imgGoalNew = imgGoalRaw
-
                 if tapeTargetLock:
-                    cv.rectangle(imgGoalNew,(tapeCameraValues['TargetX'],tapeCameraValues['TargetY']),(tapeCameraValues['TargetX']+tapeCameraValues['TargetW'],tapeCameraValues['TargetY']+tapeCameraValues['TargetH']),(0,255,0),2) #vision tape
-                    cv.drawContours(imgGoalNew, [box], 0, (0,0,255), 2)
+                    cv.rectangle(imgGoal,(tapeCameraValues['TargetX'],tapeCameraValues['TargetY']),(tapeCameraValues['TargetX']+tapeCameraValues['TargetW'],tapeCameraValues['TargetY']+tapeCameraValues['TargetH']),(0,255,0),2) #vision tape
+                    cv.drawContours(imgGoal, [box], 0, (0,0,255), 2)
             
                 cv.putText(imgBlankRaw, 'Tape Distance (A): %.2f' %tapeRealWorldValues['StraightDistance'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
                 cv.putText(imgBlankRaw, 'Tape Distance (S): %.2f' %tapeRealWorldValues['TapeDistance'], (10, 50), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
@@ -413,10 +470,57 @@ def main():
                     visionTable.putNumber("TapeDistance", tapeRealWorldValues['TapeDistance'])
                     visionTable.putNumber("TapeOffset", tapeCameraValues['Offset'])
 
+            #Determine if image should be resized before showing and saving
+            if resizeVideo:
+                imgGoalResize = cv.resize(imgGoal, 
+                                        (fieldResizeFactor*goalCamWidth, fieldResizeFactor*goalCamHeight),
+                                        interpolation = cv.INTER_LINEAR)
+
             #Display the vision camera stream (for testing only)
             if videoTesting == True:           
-                cv.imshow("Goal", imgGoalNew)
+                if resizeVideo:
+                    cv.imshow("Goal", imgGoalResize)
+                else:
+                    cv.imshow("Goal", imgGoal)
                 cv.imshow("Data", imgBlankRaw)
+
+            #Save video to a file (if enabled)
+            if networkTablesConnected:
+
+                saveVideo = visionTable.getNumber("SaveVideo", 0)
+                fourcc = cv.VideoWriter_fourcc(*'h264')
+
+                if saveVideo == 1:
+
+                    if goalFileCreated == False:
+                        videoFilename = videoDirectory + "/GoalCam_" + navx.get_raw_time() + ".mp4"
+                        camWidth = 0
+                        camHeight = 0
+                        if resizeVideo:
+                            camWidth = goalResizeFactor*goalCamWidth
+                            camHeight = goalResizeFactor*goalCamHeight 
+                        else:
+                            camWidth = goalCamWidth
+                            camHeight = goalCamHeight                            
+                        goalCamWriter = cv.VideoWriter(videoFilename, 
+                                                    fourcc, 
+                                                    goalCamFPS, 
+                                                    (camWidth, camHeight), 
+                                                    True)
+                        goalFileCreated = True
+
+                    if goalFileCreated:
+                        if resizeVideo:
+                            goalCamWriter.write(imgGoalResize)
+                        else:
+                            goalCamWriter.write(imgGoal)
+                
+                else:
+
+                    if goalFileCreated == True:
+                        goalCamWriter.release()
+                        goalFileCreated = False
+
 
         #####################
         # Process NavX Gyro #
@@ -461,13 +565,17 @@ def main():
     if videoTesting == True:
         cv.destroyAllWindows()
 
-    #Release field camera
+    #Release field camera and close video file
     if (findBalls == True) or (findMarkers == True):
         fieldCamera.release_cam()
+        if fieldFileCreated:
+            fieldCamWriter.release()
 
-    #Release goal camera
+    #Release goal camera and close video file
     if findGoal == True:
         goalCamera.release_cam()
+        if goalFileCreated:
+            goalCamWriter.release()
 
     #Close the log file
     log_file.write('Run stopped on %s.' % datetime.datetime.now())
