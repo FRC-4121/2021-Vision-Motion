@@ -126,7 +126,7 @@ class VisionLibrary:
         if erodeDilate:
             # Erode image to reduce background noise
             kernel = np.ones((3,3), np.uint8)
-            erode = cv.erode(mask, kernel, iterations=1)
+            erode = cv.erode(mask, kernel, iterations=2)
             
             # cv.imshow('erode', erode)
             
@@ -144,7 +144,6 @@ class VisionLibrary:
         contours, _ = cv.findContours(finalImg,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE)
     
         return contours
-
 
     # Define basic image processing method for edge detection
     def process_image_edges(self, imgRaw):

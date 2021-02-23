@@ -66,8 +66,10 @@ def main():
 
     # Setup webcam capture
     camera = cv2.VideoCapture('/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index0')
-    camera.set(10, 0.3)  # Brightness
-    camera.set(15, 30)  # Exposure
+    camera.set(cv2.CAP_PROP_BRIGHTNESS, 50)  # Brightness
+    camera.set(cv2.CAP_PROP_EXPOSURE, 50)  # Exposure
+    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 
     # Create trackbar window
     setup_trackbars(range_filter)
@@ -85,20 +87,18 @@ def main():
         # Blur image to remove noise
         blur = cv2.GaussianBlur(image.copy(),(5,5),0)
 
+        kernel = np.ones((3,3), np.uint8)
+        erode = cv2.erode(blur, kernel, iterations=2)
+        dilate = cv2.dilate(erode, kernel, iterations=2)
+
         # Convert color space (if HSV)
         if range_filter == 'HSV':
-            frame_to_thresh = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
+            frame_to_thresh = cv2.cvtColor(dilate, cv2.COLOR_BGR2HSV)
         else:
-            frame_to_thresh = blur.copy()
+            frame_to_thresh = dilate.copy()
         
         # Get trackbar values
         v1_min, v2_min, v3_min, v1_max, v2_max, v3_max = get_trackbar_values(range_filter)
-
-        #Erosion
-        kernel = np.ones((5,5), np.uint8)
-        erosion = cv2.erode(frame_to_thresh, kernel, iterations = 1)
-        #Dialate
-        dialation = cv2.dilate(frame_to_thresh, kernel, iterations = 1)
 
         # Threshold frame based on trackbar values
         thresh = cv2.inRange(frame_to_thresh, (v1_min, v2_min, v3_min), (v1_max, v2_max, v3_max))
