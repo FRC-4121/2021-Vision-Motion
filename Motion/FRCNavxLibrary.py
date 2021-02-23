@@ -144,6 +144,15 @@ class FRCNavx:
         return success
     
 
+    # Define get raw time method
+    def get_raw_time(self):
+
+        currentTime = self.read_time()
+        currentDate = self.read_date()
+        timeString = str(self.get_year(currentDate[4])) + str(currentDate[3]) + str(currentDate[2]) + str(currentTime[1]) + str(currentTime[2])
+        return timeString
+        
+
     # Define day of week conversion method
     def get_day_name(self, weekday):
 
