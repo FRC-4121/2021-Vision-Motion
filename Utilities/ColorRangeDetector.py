@@ -66,7 +66,7 @@ def main():
 
     # Setup webcam capture
     camera = cv2.VideoCapture('/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index0')
-    camera.set(cv2.CAP_PROP_BRIGHTNESS, 50)  # Brightness
+    camera.set(cv2.CAP_PROP_BRIGHTNESS, 60)  # Brightness
     camera.set(cv2.CAP_PROP_EXPOSURE, 50)  # Exposure
     camera.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
     camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)

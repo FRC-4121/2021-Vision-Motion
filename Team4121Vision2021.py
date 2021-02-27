@@ -339,9 +339,9 @@ def main():
 
                         if i == 0:
                             cv.circle(imgField, (int(ball['x']), int(ball['y'])), int(ball['radius']), (0, 0, 255), 2)
-                            #cv.putText(imgField, 'Distance to Ball: %.2f' %ball['distance'], (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-                            #cv.putText(imgField, 'Angle to Ball: %.2f' %ball['angle'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
-                            #cv.putText(imgField, 'Radius: %.2f' %ball['radius'], (10, 45), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                            cv.putText(imgField, 'Distance to Ball: %.2f' %ball['distance'], (10, 15), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                            cv.putText(imgField, 'Angle to Ball: %.2f' %ball['angle'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
+                            cv.putText(imgField, 'Radius: %.2f' %ball['radius'], (10, 45), cv.FONT_HERSHEY_SIMPLEX, .5,(0, 0, 255), 2)
                         else:
                             cv.circle(imgField, (int(ball['x']), int(ball['y'])), int(ball['radius']), (0, 255, 0), 2)
 
@@ -354,6 +354,8 @@ def main():
             #Draw field markers
             if markersFound > 0:
 
+                visionTable.putNumber("MarkersFound", markersFound)
+                
                 #Loop over all contours and annotate image
                 i = 0
                 for marker in markerData:
@@ -393,13 +395,22 @@ def main():
             #Save video to a file (if enabled)
             if networkTablesConnected:
 
-                saveVideo = visionTable.getNumber("SaveVideo", 0)
-                fourcc = cv.VideoWriter_fourcc(*'h264')
+                saveVideo = 0 #visionTable.getNumber("SaveVideo", 0)
+                fourcc = cv.VideoWriter_fourcc(*'xvid')
+
+                videoTimeString = ""
+                
+                #Get current time as a string
+                if useNavx == True:
+                    videoTimeString = navx.get_raw_time()
+                else:
+                    currentTime = time.localtime(time.time())
+                    videoTimeString = str(currentTime.tm_year) + str(currentTime.tm_mon) + str(currentTime.tm_mday) + str(currentTime.tm_hour) + str(currentTime.tm_min)
 
                 if saveVideo == 1:
 
                     if fieldFileCreated == False:
-                        videoFilename = videoDirectory + "/FieldCam_" + navx.get_raw_time() + ".mp4"
+                        videoFilename = videoDirectory + "/FieldCam_" + videoTimeString + ".avi"
                         camWidth = 0
                         camHeight = 0
                         if resizeVideo:
@@ -410,9 +421,8 @@ def main():
                             camHeight = fieldCamHeight                            
                         fieldCamWriter = cv.VideoWriter(videoFilename, 
                                                     fourcc, 
-                                                    fieldCamFPS, 
-                                                    (camWidth, camHeight), 
-                                                    True)
+                                                    int(fieldCamFPS), 
+                                                    (int(camWidth), int(camHeight)))
                         fieldFileCreated = True
 
                     if fieldFileCreated:
