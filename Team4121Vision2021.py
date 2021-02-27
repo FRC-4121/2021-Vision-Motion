@@ -76,11 +76,11 @@ cameraValues={}
 
 #Define program control flags
 useNavx = False
-useFieldCam = True
-useGoalCam = False
-findBalls = True
-findMarkers = True
-findGoal = False
+useFieldCam = False
+useGoalCam = True
+findBalls = False
+findMarkers = False
+findGoal = True
 videoTesting = True
 resizeVideo = True
 
@@ -274,10 +274,10 @@ def main():
         goalCamSettings['Brightness'] = cameraValues['GoalCamBrightness']
         goalCamSettings['Exposure'] = cameraValues['GoalCamExposure']
         goalCamSettings['FPS'] = cameraValues['GoalCamFPS']
-        goalCamera = FRCWebCam('/dev/v4l/by-path/platform-3f980000.usb-usb-0:1.4:1.0-video-index0', "GoalCam", goalCamSettings)
+        goalCamera = FRCWebCam('/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-video-index0', "GoalCam", goalCamSettings)
         
-        goalCamWidth = cameraValues['GoalCamWidth']
-        goalCamHeight = cameraValues['GoalCamHeight']
+        goalCamWidth = int(cameraValues['GoalCamWidth'])
+        goalCamHeight = int(cameraValues['GoalCamHeight'])
         goalCamFPS = cameraValues['GoalCamFPS']
         goalResizeFactor = int(cameraValues['GoalCamResizeFactor'])
 
@@ -483,7 +483,7 @@ def main():
             #Determine if image should be resized before showing and saving
             if resizeVideo:
                 imgGoalResize = cv.resize(imgGoal, 
-                                        (fieldResizeFactor*goalCamWidth, fieldResizeFactor*goalCamHeight),
+                                        (goalResizeFactor*goalCamWidth, goalResizeFactor*goalCamHeight),
                                         interpolation = cv.INTER_LINEAR)
 
             #Display the vision camera stream (for testing only)
@@ -497,13 +497,22 @@ def main():
             #Save video to a file (if enabled)
             if networkTablesConnected:
 
-                saveVideo = visionTable.getNumber("SaveVideo", 0)
-                fourcc = cv.VideoWriter_fourcc(*'h264')
+                saveVideo = 0 #visionTable.getNumber("SaveVideo", 0)
+                fourcc = cv.VideoWriter_fourcc(*'xvid')
+
+                videoTimeString = ""
+                
+                #Get current time as a string
+                if useNavx == True:
+                    videoTimeString = navx.get_raw_time()
+                else:
+                    currentTime = time.localtime(time.time())
+                    videoTimeString = str(currentTime.tm_year) + str(currentTime.tm_mon) + str(currentTime.tm_mday) + str(currentTime.tm_hour) + str(currentTime.tm_min)
 
                 if saveVideo == 1:
 
                     if goalFileCreated == False:
-                        videoFilename = videoDirectory + "/GoalCam_" + navx.get_raw_time() + ".mp4"
+                        videoFilename = videoDirectory + "/GoalCam_" + videoTimeString + ".mp4"
                         camWidth = 0
                         camHeight = 0
                         if resizeVideo:

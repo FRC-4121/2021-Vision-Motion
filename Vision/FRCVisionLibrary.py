@@ -370,7 +370,7 @@ class VisionLibrary:
         tapeRealWorldValues = {}
         
         # Find alignment tape in image
-        tapeContours = self.process_image_contours(imgRaw, tapeHSVMin, tapeHSVMax)
+        tapeContours = self.process_image_contours(imgRaw, tapeHSVMin, tapeHSVMax, True)
   
         # Continue with processing if alignment tape found
         if len(tapeContours) > 0:
