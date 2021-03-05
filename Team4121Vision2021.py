@@ -459,10 +459,10 @@ def main():
             #Draw vision tape contours and target data on the image
             if foundTape == True:
 
-                if tapeTargetLock:
-                    cv.rectangle(imgGoal,(tapeCameraValues['TargetX'],tapeCameraValues['TargetY']),(tapeCameraValues['TargetX']+tapeCameraValues['TargetW'],tapeCameraValues['TargetY']+tapeCameraValues['TargetH']),(0,255,0),2) #vision tape
-                    cv.drawContours(imgGoal, [box], 0, (0,0,255), 2)
-            
+                # if tapeTargetLock:
+                cv.rectangle(imgGoal,(tapeCameraValues['TargetX'],tapeCameraValues['TargetY']),(tapeCameraValues['TargetX']+tapeCameraValues['TargetW'],tapeCameraValues['TargetY']+tapeCameraValues['TargetH']),(0,255,0),2) #vision tape
+                cv.drawContours(imgGoal, [box], 0, (0,0,255), 2)
+                
                 cv.putText(imgBlankRaw, 'Tape Distance (A): %.2f' %tapeRealWorldValues['StraightDistance'], (10, 30), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
                 cv.putText(imgBlankRaw, 'Tape Distance (S): %.2f' %tapeRealWorldValues['TapeDistance'], (10, 50), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
                 cv.putText(imgBlankRaw, 'Wall Distance: %.2f' %tapeRealWorldValues['WallDistance'], (10, 70), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
@@ -472,6 +472,8 @@ def main():
                 cv.putText(imgBlankRaw, 'Offset: %.2f' %tapeCameraValues['Offset'], (10, 170), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
                 cv.putText(imgBlankRaw, 'Target Width: %.2f' %tapeCameraValues['TargetW'], (10, 190), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
                 cv.putText(imgBlankRaw, 'Apparent Width: %.2f' %tapeRealWorldValues['ApparentWidth'], (10, 210), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+                cv.putText(imgBlankRaw, 'FoundTape: ' + str(foundTape), (10, 230), cv.FONT_HERSHEY_SIMPLEX, .45,(0, 0, 255), 1)
+                
 
                 #Write target data to network table
                 if networkTablesConnected == True:
@@ -479,6 +481,12 @@ def main():
                     visionTable.putBoolean("TargetLock", tapeTargetLock)
                     visionTable.putNumber("TapeDistance", tapeRealWorldValues['TapeDistance'])
                     visionTable.putNumber("TapeOffset", tapeCameraValues['Offset'])
+            else:
+                if networkTablesConnected == True:
+                    visionTable.putBoolean("FoundTape", foundTape)
+                    visionTable.putBoolean("TargetLock", tapeTargetLock)
+                    visionTable.putNumber("TapeDistance", 0)
+                    visionTable.putNumber("TapeOffset", 0)
 
             #Determine if image should be resized before showing and saving
             if resizeVideo:
