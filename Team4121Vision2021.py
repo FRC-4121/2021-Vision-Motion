@@ -30,9 +30,9 @@
 #                                                                                              #
 #  Creation Date: 3/1/2018                                                                     #
 #                                                                                              #
-#  Revision: 5.0                                                                               #
+#  Revision: 6.0                                                                               #
 #                                                                                              #
-#  Revision Date: 2/8/2021                                                                     #
+#  Revision Date: 3/14/2021                                                                     #
 #                                                                                              #
 #----------------------------------------------------------------------------------------------#
 
@@ -83,6 +83,7 @@ findMarkers = False
 findGoal = True
 videoTesting = True
 resizeVideo = True
+saveVideo = False
 
 #Read vision settings file
 def read_settings_file():
@@ -186,10 +187,7 @@ def main():
     #Define flags
     networkTablesConnected = False
     foundTape = False
-    foundVisionTarget = False
     tapeTargetLock = False
-    fieldFileCreated = False
-    goalFileCreated = False
 
     #Define variables
     gyroAngle = 0
@@ -259,7 +257,12 @@ def main():
         fieldCamSettings['Brightness'] = cameraValues['FieldCamBrightness']
         fieldCamSettings['Exposure'] = cameraValues['FieldCamExposure']
         fieldCamSettings['FPS'] = cameraValues['FieldCamFPS']
-        fieldCamera = FRCWebCam('/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index0', "FieldCam", fieldCamSettings)
+        fieldCamFilename = videoDirectory + "/FieldCam_" + videoTimeString + ".avi"
+        fieldCamera = FRCWebCam('/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index0', 
+                                'FieldCam',
+                                 fieldCamSettings,
+                                 'FieldCam01',
+                                 fieldCamFilename)
         
         fieldCamWidth = int(cameraValues['FieldCamWidth'])
         fieldCamHeight = int(cameraValues['FieldCamHeight'])
@@ -274,7 +277,12 @@ def main():
         goalCamSettings['Brightness'] = cameraValues['GoalCamBrightness']
         goalCamSettings['Exposure'] = cameraValues['GoalCamExposure']
         goalCamSettings['FPS'] = cameraValues['GoalCamFPS']
-        goalCamera = FRCWebCam('/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-video-index0', "GoalCam", goalCamSettings)
+        goalCamFilename = videoDirectory + "/GoalCam_" + videoTimeString + ".avi"
+        goalCamera = FRCWebCam('/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-video-index0', 
+                               'GoalCam', 
+                               goalCamSettings,
+                               'GoalCam01',
+                               goalCamFilename)
         
         goalCamWidth = int(cameraValues['GoalCamWidth'])
         goalCamHeight = int(cameraValues['GoalCamHeight'])
@@ -287,6 +295,7 @@ def main():
     #Create blank vision image
     imgField = np.zeros(shape=(int(cameraValues['FieldCamWidth']), int(cameraValues['FieldCamHeight']), 3), dtype=np.uint8)
     imgGoal = np.zeros(shape=(int(cameraValues['GoalCamWidth']), int(cameraValues['GoalCamHeight']), 3), dtype=np.uint8)
+
 
     #Start main processing loop
     while (True):
@@ -394,49 +403,15 @@ def main():
 
             #Save video to a file (if enabled)
             if networkTablesConnected:
+                saveVideo = visionTable.getNumber("SaveVideo", 0)
 
-                saveVideo = 0 #visionTable.getNumber("SaveVideo", 0)
-                fourcc = cv.VideoWriter_fourcc(*'xvid')
+            if (saveVideo == 1) or (saveVideo == True):
 
-                videoTimeString = ""
-                
-                #Get current time as a string
-                if useNavx == True:
-                    videoTimeString = navx.get_raw_time()
+                if resizeVideo:
+                    fieldCamera.write_video(imgFieldResize)
                 else:
-                    currentTime = time.localtime(time.time())
-                    videoTimeString = str(currentTime.tm_year) + str(currentTime.tm_mon) + str(currentTime.tm_mday) + str(currentTime.tm_hour) + str(currentTime.tm_min)
-
-                if saveVideo == 1:
-
-                    if fieldFileCreated == False:
-                        videoFilename = videoDirectory + "/FieldCam_" + videoTimeString + ".avi"
-                        camWidth = 0
-                        camHeight = 0
-                        if resizeVideo:
-                            camWidth = fieldResizeFactor*fieldCamWidth
-                            camHeight = fieldResizeFactor*fieldCamHeight 
-                        else:
-                            camWidth = fieldCamWidth
-                            camHeight = fieldCamHeight                            
-                        fieldCamWriter = cv.VideoWriter(videoFilename, 
-                                                    fourcc, 
-                                                    int(fieldCamFPS), 
-                                                    (int(camWidth), int(camHeight)))
-                        fieldFileCreated = True
-
-                    if fieldFileCreated:
-                        if resizeVideo:
-                            fieldCamWriter.write(imgFieldResize)
-                        else:
-                            fieldCamWriter.write(imgField)
+                    fieldCamera.write_video(imgField)
                 
-                else:
-
-                    if fieldFileCreated == True:
-                        fieldCamWriter.release()
-                        fieldFileCreated = False
-
 
         #####################
         # Find goal targets #
@@ -504,50 +479,15 @@ def main():
 
             #Save video to a file (if enabled)
             if networkTablesConnected:
+                saveVideo = visionTable.getNumber("SaveVideo", 0)
 
-                saveVideo = 0 #visionTable.getNumber("SaveVideo", 0)
-                fourcc = cv.VideoWriter_fourcc(*'xvid')
+            if (saveVideo == 1) or (saveVideo == True):
 
-                videoTimeString = ""
-                
-                #Get current time as a string
-                if useNavx == True:
-                    videoTimeString = navx.get_raw_time()
+                if resizeVideo:
+                    goalCamera.write_video(imgGoalResize)
                 else:
-                    currentTime = time.localtime(time.time())
-                    videoTimeString = str(currentTime.tm_year) + str(currentTime.tm_mon) + str(currentTime.tm_mday) + str(currentTime.tm_hour) + str(currentTime.tm_min)
-
-                if saveVideo == 1:
-
-                    if goalFileCreated == False:
-                        videoFilename = videoDirectory + "/GoalCam_" + videoTimeString + ".mp4"
-                        camWidth = 0
-                        camHeight = 0
-                        if resizeVideo:
-                            camWidth = goalResizeFactor*goalCamWidth
-                            camHeight = goalResizeFactor*goalCamHeight 
-                        else:
-                            camWidth = goalCamWidth
-                            camHeight = goalCamHeight                            
-                        goalCamWriter = cv.VideoWriter(videoFilename, 
-                                                    fourcc, 
-                                                    goalCamFPS, 
-                                                    (camWidth, camHeight), 
-                                                    True)
-                        goalFileCreated = True
-
-                    if goalFileCreated:
-                        if resizeVideo:
-                            goalCamWriter.write(imgGoalResize)
-                        else:
-                            goalCamWriter.write(imgGoal)
+                    goalCamera.write_video(imgGoal)
                 
-                else:
-
-                    if goalFileCreated == True:
-                        goalCamWriter.release()
-                        goalFileCreated = False
-
 
         #####################
         # Process NavX Gyro #
@@ -592,17 +532,13 @@ def main():
     if videoTesting == True:
         cv.destroyAllWindows()
 
-    #Release field camera and close video file
+    #Release field camera
     if (findBalls == True) or (findMarkers == True):
         fieldCamera.release_cam()
-        if fieldFileCreated:
-            fieldCamWriter.release()
 
-    #Release goal camera and close video file
+    #Release goal camera
     if findGoal == True:
         goalCamera.release_cam()
-        if goalFileCreated:
-            goalCamWriter.release()
 
     #Close the log file
     log_file.write('Run stopped on %s.' % datetime.datetime.now())
