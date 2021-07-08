@@ -81,7 +81,7 @@ useGoalCam = True
 findBalls = False
 findMarkers = False
 findGoal = True
-videoTesting = True
+videoTesting = False
 resizeVideo = True
 saveVideo = False
 
@@ -257,7 +257,7 @@ def main():
         fieldCamSettings['Brightness'] = cameraValues['FieldCamBrightness']
         fieldCamSettings['Exposure'] = cameraValues['FieldCamExposure']
         fieldCamSettings['FPS'] = cameraValues['FieldCamFPS']
-        fieldCamFilename = videoDirectory + "/FieldCam_" + videoTimeString + ".avi"
+        fieldCamFilename = videoDirectory + "/FieldCam_001.avi"
         fieldCamera = FRCWebCam('/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index0', 
                                 'FieldCam',
                                  fieldCamSettings,
@@ -277,7 +277,7 @@ def main():
         goalCamSettings['Brightness'] = cameraValues['GoalCamBrightness']
         goalCamSettings['Exposure'] = cameraValues['GoalCamExposure']
         goalCamSettings['FPS'] = cameraValues['GoalCamFPS']
-        goalCamFilename = videoDirectory + "/GoalCam_" + videoTimeString + ".avi"
+        goalCamFilename = videoDirectory + "/GoalCam_001.avi"
         goalCamera = FRCWebCam('/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-video-index0', 
                                'GoalCam', 
                                goalCamSettings,
